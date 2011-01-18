@@ -22,7 +22,7 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Jaguar;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Victor;
-import resource.can.CANJaguar;
+import edu.wpi.first.wpilibj.CANJaguar;
 
 /**
  * The VM is configured to automatically run this class, and to call the
