@@ -1,4 +1,4 @@
-    /*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------
 /* Copyright (c) FIRST 2008. All Rights Reserved.
 /* Open Source Software - may be modified and shared by FRC teams. The code
 /* must be accompanied by the FIRST BSD license file in the root directory of
@@ -92,11 +92,11 @@ public class BadRobot extends IterativeRobot {
 
 
     Timer t = new Timer();//this should be doing timing crap, hopefully it is, fix this comment when tested
-    CANJaguar fLeft = new CANJaguar(fLeft_ID);
-    CANJaguar fRight = new CANJaguar(fRight_ID);
-    CANJaguar bLeft = new CANJaguar(bLeft_ID);
-    CANJaguar bRight = new CANJaguar(bRight_ID);
-    CANJaguar armMotor = new CANJaguar(armID);
+    CANJaguar fLeft;
+    CANJaguar fRight;
+    CANJaguar bLeft;
+    CANJaguar bRight;
+    CANJaguar armMotor;
 
     Victor winch = new Victor(winch_ID);
 
@@ -138,7 +138,16 @@ public class BadRobot extends IterativeRobot {
 
     //   Gyro gyro = new Gyro(GYROSCOPE_CHANNEL);
     public void robotInit()
-    {//called once when robot is turned on
+    {
+        try {
+        fLeft = new CANJaguar(fLeft_ID);
+        fRight = new CANJaguar(fRight_ID);
+        bLeft = new CANJaguar(bLeft_ID);
+        bRight = new CANJaguar(bRight_ID);
+        armMotor = new CANJaguar(armID);
+        } catch (Exception e) {}
+        
+        //called once when robot is turned on
         //DISABLE CAMERA INITIALIZATION IF THE CAMERA IS NOT CONNECTED
 	feedMe.setExpiration(1);
 	feedMe.feed();
@@ -421,7 +430,10 @@ public class BadRobot extends IterativeRobot {
 
     public void setCoast(CANJaguar jag)
     {//Sets the drive motors to coast mode
+        try{
         jag.configNeutralMode(CANJaguar.NeutralMode.kCoast);
+        }
+        catch(Exception e){}
     }
 
     public void updateAirComp(Compressor comp)

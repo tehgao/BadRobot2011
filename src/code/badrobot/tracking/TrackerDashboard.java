@@ -102,8 +102,8 @@ public class TrackerDashboard {
 
             }
             lowDashData.finalizeCluster();
-
-            lowDashData.addByte(Solenoid.getAll());
+            Solenoid test = new Solenoid(1); //TODO:Check channel number for conflicts
+            lowDashData.addByte(test.getAll());
         }
         lowDashData.finalizeCluster();
         lowDashData.commit();
