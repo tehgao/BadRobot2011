@@ -63,9 +63,9 @@ public class RobotTemplate extends IterativeRobot
                 middle = new DigitalInput(2);
                 right = new DigitalInput(14);
 
-                output = new DigitalOutput(10); // initialize ultrasonic
-                input = new DigitalInput(8);
-                ultraSonic  = new Ultrasonic(output, input, Ultrasonic.Unit.kMillimeter);
+                output = new DigitalOutput(10); // ultrasonic output
+                input = new DigitalInput(8); //ultrasonic input
+                ultraSonic  = new Ultrasonic(output, input, Ultrasonic.Unit.kMillimeter); //initialize ultrasonic
                 ultraSonic.setEnabled(true);
                 ultraSonic.setAutomaticMode(true);
 
@@ -84,7 +84,7 @@ public class RobotTemplate extends IterativeRobot
     {
         
         
-         forkLeft =  ds.getDigitalIn(1);//left
+         forkLeft =  ds.getDigitalIn(1);//left         
          boolean leftValue = left.get();
          boolean middleValue = middle.get();
          boolean rightValue = right.get();
@@ -96,14 +96,16 @@ public class RobotTemplate extends IterativeRobot
 
          if(closerThan(500))
         {
-            System.out.println("I should stop");
+            //System.out.println("I should stop");
             straight(0);
             return;
         }
 
         switch (lineState)
         {
-            case 0:
+            case 0: //No sensors see the line
+                System.out.println("Lost the line: " + lastSense);
+                speed = .25;
                  if (lastSense == 1) // left is last seen, go left
                 {
                     setLefts(-speed);//speed * 0.7);
@@ -116,23 +118,28 @@ public class RobotTemplate extends IterativeRobot
                 }
                 else
                 {
-                    setLefts(0.2); // CAUTION!  Go Slow!
+                    setLefts(0.2); // CAUTION!  Go Slowly!
                     setRights(0.2);
                 }
                 break;
-            case 1:
-                hardRight(speed);
+            case 1: //Right sees the line
+                softRight(speed);
+                lastSense = 2;
                 break;
-            case 2:
+            case 2: //Middle sees the line
                 straight(speed);
                 break;
-            case 3:
+            case 3: //Middle and right sees the line
                 softRight(speed);
+                lastSense = 2;
                 break;
-            case 4:
-                hardLeft(speed);
+            case 4: //Left sees the line
+               // System.out.println("Hard left");
+                softLeft(speed);
+                lastSense = 1;
                 break;
-            case 5:
+            case 5: //Left and right see the line
+                System.out.println("At Cross");
                 if(forkLeft)
                 {
                     hardLeft(speed);
@@ -142,10 +149,12 @@ public class RobotTemplate extends IterativeRobot
                     hardRight(speed);
                 }
                 break;
-            case 6:
+            case 6: //Left and middle see the line
                 softLeft(speed);
+                lastSense = 1;
                 break;
-            case 7:
+            case 7: //All three see the line
+                System.out.println("At Cross 7");
                 if(forkLeft)
                 {
                     hardLeft(speed);
@@ -161,115 +170,7 @@ public class RobotTemplate extends IterativeRobot
         }
        
 
-        /**
-        if (!atFork && !closerThan(500)) // while not at fork, stop if closer than 500mm
-        {
-            //System.out.println(atFork + "Hey y'all" + ultraSonic.getRangeMM());
-
-            speed = .3; // can change
-
-            if(middleValue && (!leftValue && !rightValue)) // if it's centered
-            {
-                setLefts(speed);
-                setRights(speed);
-            }
-
-            else if(!leftValue && rightValue) // if it's too far right go right
-            {
-                lastSense = 2;
-                setRights(0);//speed * 0.7);
-                setLefts(speed); //(-turn/45 + 1)); // run right motors slower to turn 
-            }
-
-            else if (!rightValue && leftValue) // if it's too far left go left
-            {
-                lastSense = 1;
-                setLefts(0);//speed*0.7);
-                setRights(speed); //(-turn/45 + 1)); 
-            }
-
-            else if (!middleValue && !leftValue && !rightValue)
-            {
-                if (lastSense == 1) // left is last seen, go left
-                {
-                    setLefts(-speed);//speed * 0.7);
-                    setRights(speed);
-                }
-                else if (lastSense == 2) // go right
-                {
-                    setLefts(speed);
-                    setRights(-speed);//speed * 0.7);
-                }  
-                else
-                {
-                    setLefts(0.2); // CAUTION!  Go Slow!
-                    setRights(0.2);
-                }
-                
-            }
-
-            else if (leftValue && rightValue) // at fork
-            {
-                atFork = true;
-                if(digitalIns3)
-                    atFork = false;
-            }
-        }
-
-        
-        else if (atFork && !closerThan(500)) // after fork
-        {
-            if (digitalIns1) // if Driverstation input 1 is clicked, go left
-            {
-                System.out.print("we get di");
-                setRights(speed);
-                setLefts(-speed);//speed * 0.7);
-                timer.delay(1.5);
-                setRights(speed);
-                setLefts(speed);
-                atFork = false;
-            }
-
-            else // if Driverstation input 2 is clicked, go right (DEFAULT)
-            {
-                setLefts(speed);
-                setRights(-speed);//speed * 0.7);
-                timer.delay(1.5);
-                setRights(speed);
-                setLefts(speed);
-                atFork = false;
-            }
-        }
-        
-        if (closerThan(500))
-        {
-            setLefts(0);
-            setRights(0);
-        }
-        
-
-        
-        System.out.print("autonomous starts");
-        timer.start();// obvious
-
-        try {
-                //fLeft = new CANJaguar(9);
-                fLeft.setX(0.5); // DEPRECATED METHOD NO JUTSU
-                bLeft.setX(0.5);
-                while (true)
-                    ultraSonicAct();
-            } catch(Exception e) { e.printStackTrace(); }
-
-        timer.delay(5); // drive for 5s
-
-        try {
-            fLeft.setX(0);
-            bLeft.setX(0);
-        } catch (CANTimeoutException ex) {
-            ex.printStackTrace();
-        }
-
-        timer.stop();  // stop*/
+     
     }
     
     public void teleopPeriodic() 
@@ -331,26 +232,26 @@ public class RobotTemplate extends IterativeRobot
 
     public void hardLeft(double speed)
     {
-        setLefts(0);
+        setLefts(-speed);
         setRights(speed);
     }
 
     public void hardRight(double speed)
     {
         setLefts(speed);
-        setRights(0);
+        setRights(-speed);
     }
 
     public void softLeft(double speed)
     {
-        setLefts(speed/2);
+        setLefts(0);
         setRights(speed);
     }
 
     public void softRight(double speed)
     {
         setLefts(speed);
-        setRights(speed/2);
+        setRights(0);
     }
 
     int lastRange = 0; // ascertains that you are less than 1500mm
