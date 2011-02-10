@@ -34,7 +34,7 @@ public class RobotTemplate extends IterativeRobot
     
     Joystick j1 = new Joystick(1);
     Joystick j2 = new Joystick(2);
-    CANJaguar fLeft, fRight, bLeft, bRight,unused1, unused2; //motors
+    CANJaguar fLeft, fRight, bLeft, bRight,joint1, joint2; //motors
     DigitalOutput output; // for ultrasonic
     DigitalInput input;
     Ultrasonic ultraSonic;
@@ -54,6 +54,8 @@ public class RobotTemplate extends IterativeRobot
                 fRight = new CANJaguar(4);
                 bLeft = new CANJaguar(9);
                 bRight = new CANJaguar(7);
+                joint1 = new CANJaguar(5);
+                joint2 = new CANJaguar(8);
                // setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
                // setCoast(fRight);
                // setCoast(bLeft);
@@ -89,7 +91,7 @@ public class RobotTemplate extends IterativeRobot
          boolean middleValue = middle.get();
          boolean rightValue = right.get();
         //System.out.print("Autonomous Start");
-        double speed = 0.3;
+        double speed = 0.4;
         int lineState = (int)(rightValue?1:0)+
                         (int)(middleValue?2:0)+
                         (int)(leftValue?4:0);
@@ -118,7 +120,7 @@ public class RobotTemplate extends IterativeRobot
                 }
                 else
                 {
-                    setLefts(0.2); // CAUTION!  Go Slowly!
+                    setLefts(0.2); // CAUTION!  Go Slow!
                     setRights(0.2);
                 }
                 break;
@@ -175,16 +177,96 @@ public class RobotTemplate extends IterativeRobot
     
     public void teleopPeriodic() 
     {
+/**
+ *
+ *
+ * Change powers for up vs. down, find conventions on
+ * elbow vs sholder
+ */
         try{
-        setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
-        setCoast(fRight);
-        setCoast(bLeft);
-        setCoast(bRight);
+            setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
+            setCoast(fRight);
+            setCoast(bLeft);
+            setCoast(bRight);
         }catch (Exception e) {}
 
         setLefts(deadzone(-j1.getY()));
         setRights(deadzone(-j2.getY()));
-    }
+
+        if(j1.getRawButton(2))
+        {
+            try{
+                joint1.setX(0.25);
+            } catch (CANTimeoutException e)
+            {
+                e.printStackTrace();
+                DriverStationLCD lcd = DriverStationLCD.getInstance();
+                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm");
+                lcd.updateLCD();
+            }
+
+        }
+        else if(j1.getRawButton(3))
+        {
+             try{
+                joint1.setX(-0.25);
+            } catch (CANTimeoutException e)
+            {
+                e.printStackTrace();
+                DriverStationLCD lcd = DriverStationLCD.getInstance();
+                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm");
+                lcd.updateLCD();
+            }
+        }
+        else
+            {
+                try{
+                    joint1.setX(0);
+                } catch (CANTimeoutException e){
+            e.printStackTrace();
+            DriverStationLCD lcd = DriverStationLCD.getInstance();
+            lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm");
+            lcd.updateLCD();
+            }
+        }
+        
+         if(j2.getRawButton(2))
+        {
+            try{
+
+                joint2.setX(0.25);
+            } catch (CANTimeoutException e){
+                e.printStackTrace();
+                DriverStationLCD lcd = DriverStationLCD.getInstance();
+                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm");
+                lcd.updateLCD();
+             }
+
+        }
+        else if(j2.getRawButton(3))
+        {
+             try{
+                joint2.setX(-0.25);
+            } catch (CANTimeoutException e){
+            e.printStackTrace();
+            DriverStationLCD lcd = DriverStationLCD.getInstance();
+            lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm");
+            lcd.updateLCD();
+            }
+        }
+        else
+            {
+                try{
+                    joint2.setX(0);
+                } catch (CANTimeoutException e){
+            e.printStackTrace();
+            DriverStationLCD lcd = DriverStationLCD.getInstance();
+            lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm");
+            lcd.updateLCD();
+            }
+        }
+        
+   }
 
     private void setLefts(double d)
     {
