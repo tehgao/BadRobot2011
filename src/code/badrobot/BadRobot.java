@@ -59,7 +59,8 @@ public class BadRobot extends IterativeRobot {
     fRight_ID = 4,
     bLeft_ID = 9,
     bRight_ID = 7,
-    armID = 5;
+    lowerArm_ID = 5,
+    upperArm_ID = 8;
 
     final int winch_ID = 1; //winch (PWM) ID
 
@@ -96,7 +97,8 @@ public class BadRobot extends IterativeRobot {
     CANJaguar fRight;
     CANJaguar bLeft;
     CANJaguar bRight;
-    CANJaguar armMotor;
+    CANJaguar lowerArm;
+    CANJaguar upperArm;
 
     Victor winch = new Victor(winch_ID);
 
@@ -105,11 +107,6 @@ public class BadRobot extends IterativeRobot {
 
     Relay roller1 = new Relay(ROLLER1_RELAY_CHANNEL);
     Relay roller2 = new Relay(ROLLER2_RELAY_CHANNEL);
-    //Relay kickPneum1 = new Relay(KICK1_RELAY_CHANNEL);
-    //Relay kickPneum2 = new Relay(KICK2_RELAY_CHANNEL);
-
-
-
 
     Joystick jLeft = new Joystick(1);
     Joystick jRight = new Joystick(2);
@@ -129,10 +126,10 @@ public class BadRobot extends IterativeRobot {
     Double randomTimeVar;//has suprisingly low entropy given its alleged randomness
 
     boolean kickButton,
-    armButtonUp=false,
-    armButtonDown=false,
     winchButton,
     rollerButton,
+    lowerArmButton,
+    upperArmButton,
     armGrabButton,
     airCompToggle;
 
@@ -144,7 +141,9 @@ public class BadRobot extends IterativeRobot {
         fRight = new CANJaguar(fRight_ID);
         bLeft = new CANJaguar(bLeft_ID);
         bRight = new CANJaguar(bRight_ID);
-        armMotor = new CANJaguar(armID);
+        //armMotor = new CANJaguar(armID);
+        lowerArm = new CANJaguar(lowerArm_ID);
+        upperArm = new CANJaguar(upperArm_ID);
         } catch (Exception e) {}
         
         //called once when robot is turned on
@@ -158,7 +157,8 @@ public class BadRobot extends IterativeRobot {
         setCoast(fRight);
         setCoast(bLeft);
         setCoast(bRight);
-        setCoast(armMotor);
+        setCoast(lowerArm);
+        setCoast(upperArm);
 
         camera = AxisCamera.getInstance();
         t.start();//ensures timer is init'd, instantiation might do it, but this makes sure
@@ -356,7 +356,8 @@ public class BadRobot extends IterativeRobot {
         //updateRollers();
 
 	updateKicker();
-        updateArm();
+        updateLowerArm();
+        updateUpperArm();
         DriverStationLCD.getInstance().updateLCD();
 
 
@@ -450,38 +451,45 @@ public class BadRobot extends IterativeRobot {
 	}
     }
 
-    public void updateArm()
-    {//state machine for the arm
-	if(ps2.getRawButton(4))
+    public void updateLowerArm()
+    {//state machine for the lower arm
+        if(DEBUG_MODE) System.out.println("LOWER ARM FUNCTION CALL");
+	if(jLeft.getRawButton(3))
 	{
-	    armMotor.set(1);
+	    lowerArm.set(.1);
 	}
-	else if(ps2.getRawButton(2))
+	else if(jLeft.getRawButton(2))
 	{
-	    armMotor.set(-1);
-	}
-	else
-	{
-	    armMotor.set(0);
-	}
-	if(ps2.getRawButton(3)&&ps2.getRawButton(1))
-	{
-	    winch.set(-.2);
-	}
-	else if(ps2.getRawButton(3))
-	{
-	    winch.set(1);
+	    lowerArm.set(-.1);
 	}
 	else
 	{
-	    winch.set(0);
+	    lowerArm.set(0);
 	}
 	feedMe.feed();
     }
 
-    public void updateKicker()
+    public void updateUpperArm()
+    {
+        if(DEBUG_MODE) System.out.println("UPPER ARM FUNCTION");
+        if(jRight.getRawButton(3))
+        {
+            upperArm.set(.1);
+        }
+        else if (jRight.getRawButton(2))
+        {
+            upperArm.set(-.1);
+        }
+        else
+        {
+            lowerArm.set(0);
+        }
+        feedMe.feed();
+    }
+
+    /**public void updateKicker()
     {//state machine for the kicker
-	/**if(DEBUG_MODE)System.out.println("KICK FUNCTION ps2.getRawButton(6)=="+ps2.getRawButton(6));
+	if(DEBUG_MODE)System.out.println("KICK FUNCTION ps2.getRawButton(6)=="+ps2.getRawButton(6));
         if(!timing&&ps2.getRawButton(6))
 	{
 	    if(DEBUG_MODE)System.out.println("KICKING");
@@ -497,12 +505,12 @@ public class BadRobot extends IterativeRobot {
 	    solR.set(false);
 	    timing=false;
 	    if(DEBUG_MODE)System.out.println("RETRACTING");}
-	}*/
+	}
 	System.out.println("KICKING");
 	solL.set(ps2.getRawButton(6)||jRight.getRawButton(1));
 	solR.set(ps2.getRawButton(6)||jRight.getRawButton(1));
 	feedMe.feed();
-    }
+    } */
 
     public void findTarget()
     {//Looks for targets will spin in an arc for a specified time
