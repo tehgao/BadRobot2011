@@ -25,16 +25,17 @@ import edu.wpi.first.wpilibj.DriverStationLCD;
  * creating this project, you must also update the manifest file in the resource
  * directory.
  */
-public class RobotTemplate extends IterativeRobot 
+public class RobotTemplate extends IterativeRobot
 {
     /**
      * This function is run when the robot is first started up and should be
      * used for any initialization code.
      */
-    
+
     Joystick j1 = new Joystick(1);
     Joystick j2 = new Joystick(2);
-    CANJaguar fLeft, fRight, bLeft, bRight,joint1, joint2; //motors
+    Joystick controller = new Joystick(3);
+    CANJaguar fLeft, fRight, bLeft, bRight,unused1, unused2, lowerArm, upperArm; //motors
     DigitalOutput output; // for ultrasonic
     DigitalInput input;
     Ultrasonic ultraSonic;
@@ -45,7 +46,7 @@ public class RobotTemplate extends IterativeRobot
     DigitalInput right;
     DriverStation ds;
     boolean forkLeft;
-   
+
     public void robotInit()
     {
             try
@@ -54,8 +55,9 @@ public class RobotTemplate extends IterativeRobot
                 fRight = new CANJaguar(4);
                 bLeft = new CANJaguar(9);
                 bRight = new CANJaguar(7);
-                joint1 = new CANJaguar(5);
-                joint2 = new CANJaguar(8);
+                lowerArm = new CANJaguar(5);
+                upperArm = new CANJaguar(8);
+
                // setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
                // setCoast(fRight);
                // setCoast(bLeft);
@@ -84,14 +86,14 @@ public class RobotTemplate extends IterativeRobot
     int lastSense = 0; // last LineTracker which saw line (1 for left, 2 for right)
     public void autonomousPeriodic()
     {
-        
-        
-         forkLeft =  ds.getDigitalIn(1);//left         
+
+
+         forkLeft =  ds.getDigitalIn(1);//left
          boolean leftValue = left.get();
          boolean middleValue = middle.get();
          boolean rightValue = right.get();
         //System.out.print("Autonomous Start");
-        double speed = 0.4;
+        double speed = 0.3;
         int lineState = (int)(rightValue?1:0)+
                         (int)(middleValue?2:0)+
                         (int)(leftValue?4:0);
@@ -120,7 +122,7 @@ public class RobotTemplate extends IterativeRobot
                 }
                 else
                 {
-                    setLefts(0.2); // CAUTION!  Go Slow!
+                    setLefts(0.2); // CAUTION!  Go Slowly!
                     setRights(0.2);
                 }
                 break;
@@ -170,103 +172,27 @@ public class RobotTemplate extends IterativeRobot
                 System.out.println("You're doomed. Run.");
 
         }
-       
 
-     
+
+
     }
-    
-    public void teleopPeriodic() 
+
+    public void teleopPeriodic()
     {
-/**
- *
- *
- * Change powers for up vs. down, find conventions on
- * elbow vs sholder
- */
         try{
-            setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
-            setCoast(fRight);
-            setCoast(bLeft);
-            setCoast(bRight);
+        setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
+        setCoast(fRight);
+        setCoast(bLeft);
+        setCoast(bRight);
+        setBreak(lowerArm);
+        setBreak(upperArm);
         }catch (Exception e) {}
 
         setLefts(deadzone(-j1.getY()));
         setRights(deadzone(-j2.getY()));
-
-        if(j1.getRawButton(2))
-        {
-            try{
-                joint1.setX(0.25);
-            } catch (CANTimeoutException e)
-            {
-                e.printStackTrace();
-                DriverStationLCD lcd = DriverStationLCD.getInstance();
-                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm");
-                lcd.updateLCD();
-            }
-
-        }
-        else if(j1.getRawButton(3))
-        {
-             try{
-                joint1.setX(-0.25);
-            } catch (CANTimeoutException e)
-            {
-                e.printStackTrace();
-                DriverStationLCD lcd = DriverStationLCD.getInstance();
-                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm");
-                lcd.updateLCD();
-            }
-        }
-        else
-            {
-                try{
-                    joint1.setX(0);
-                } catch (CANTimeoutException e){
-            e.printStackTrace();
-            DriverStationLCD lcd = DriverStationLCD.getInstance();
-            lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm");
-            lcd.updateLCD();
-            }
-        }
-        
-         if(j2.getRawButton(2))
-        {
-            try{
-
-                joint2.setX(0.25);
-            } catch (CANTimeoutException e){
-                e.printStackTrace();
-                DriverStationLCD lcd = DriverStationLCD.getInstance();
-                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm");
-                lcd.updateLCD();
-             }
-
-        }
-        else if(j2.getRawButton(3))
-        {
-             try{
-                joint2.setX(-0.25);
-            } catch (CANTimeoutException e){
-            e.printStackTrace();
-            DriverStationLCD lcd = DriverStationLCD.getInstance();
-            lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm");
-            lcd.updateLCD();
-            }
-        }
-        else
-            {
-                try{
-                    joint2.setX(0);
-                } catch (CANTimeoutException e){
-            e.printStackTrace();
-            DriverStationLCD lcd = DriverStationLCD.getInstance();
-            lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm");
-            lcd.updateLCD();
-            }
-        }
-        
-   }
+        updateLowerArm();
+        updateUpperArm();
+    }
 
     private void setLefts(double d)
     {
@@ -298,12 +224,26 @@ public class RobotTemplate extends IterativeRobot
         try{jag.configNeutralMode(CANJaguar.NeutralMode.kCoast);} catch (Exception e) {e.printStackTrace();}
     }
 
+     public void setBreak(CANJaguar jag) throws CANTimeoutException
+    {//Sets the drive motors to brake mode
+        try{jag.configNeutralMode(CANJaguar.NeutralMode.kBrake);} catch (Exception e) {e.printStackTrace();}
+    }
+
     public double deadzone(double d)
     {//deadzone for input devices
         if (Math.abs(d) < .05) {
             return 0;
         }
         return d / Math.abs(d) * ((Math.abs(d) - .05) / .95);
+    }
+    public double rampArm(double input)
+    {
+        if(input < 0)
+        {
+            return input * 0.01;
+        }
+        else return input;
+
     }
 
     public void straight(double speed)
@@ -344,7 +284,7 @@ public class RobotTemplate extends IterativeRobot
             if (lastRange > 4) // 4 checks to stop
             {
                 return true;
-            } 
+            }
             else lastRange++;
         }
         else
@@ -352,7 +292,58 @@ public class RobotTemplate extends IterativeRobot
             lastRange = 0;
         }
         return false;
+
     }
+
+    public void updateLowerArm()
+    {//state machine for the lower arm
+        try{
+            lowerArm.setX(deadzone(controller.getZ()));
+         } catch (CANTimeoutException e){
+                DriverStationLCD lcd = DriverStationLCD.getInstance();
+                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
+                lcd.updateLCD();
+            }
+      
+    }
+
+    public void updateUpperArm()
+    {
+        if(controller.getRawButton(6))
+        {
+            System.out.println("Upper arm: .5");
+            try{
+            upperArm.setX(0.5);
+             } catch (CANTimeoutException e){
+                DriverStationLCD lcd = DriverStationLCD.getInstance();
+                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
+                lcd.updateLCD();
+            }
+        }
+        else if (controller.getRawButton(5))
+        {
+            System.out.println("Upper arm: -.5");
+            try{
+            upperArm.setX(-0.35);
+             } catch (CANTimeoutException e){
+                DriverStationLCD lcd = DriverStationLCD.getInstance();
+                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
+                lcd.updateLCD();
+            }
+        }
+        else
+        {
+            try{
+            upperArm.setX(0.0);
+             } catch (CANTimeoutException e){
+                DriverStationLCD lcd = DriverStationLCD.getInstance();
+                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
+                lcd.updateLCD();
+            }
+        }
+        //feedMe.feed();
+    }
+
     /*public void ultraSonicAct()
     {
         System.out.println(ultraSonic.getRangeMM() + "\t" + ultraSonic.isRangeValid());
@@ -361,5 +352,5 @@ public class RobotTemplate extends IterativeRobot
             System.out.print("Object is within 100 mm of sensor");
         }
     }*/
-    
+
 }
