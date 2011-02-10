@@ -34,7 +34,7 @@ public class RobotTemplate extends IterativeRobot
     
     Joystick j1 = new Joystick(1);
     Joystick j2 = new Joystick(2);
-    CANJaguar fLeft, fRight, bLeft, bRight,unused1, unused2; //motors
+    CANJaguar fLeft, fRight, bLeft, bRight,unused1, unused2, lowerArm, upperArm; //motors
     DigitalOutput output; // for ultrasonic
     DigitalInput input;
     Ultrasonic ultraSonic;
@@ -54,6 +54,9 @@ public class RobotTemplate extends IterativeRobot
                 fRight = new CANJaguar(4);
                 bLeft = new CANJaguar(9);
                 bRight = new CANJaguar(7);
+                lowerArm = new CANJaguar(5);
+                upperArm = new CANJaguar(8);
+
                // setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
                // setCoast(fRight);
                // setCoast(bLeft);
@@ -184,6 +187,8 @@ public class RobotTemplate extends IterativeRobot
 
         setLefts(deadzone(-j1.getY()));
         setRights(deadzone(-j2.getY()));
+        updateLowerArm();
+        updateUpperArm();
     }
 
     private void setLefts(double d)
@@ -270,7 +275,49 @@ public class RobotTemplate extends IterativeRobot
             lastRange = 0;
         }
         return false;
+    
     }
+
+    public void updateLowerArm()
+    {//state machine for the lower arm
+        System.out.println("LOWER ARM FUNCTION CALL");
+	if(j1.getRawButton(3))
+	{
+            System.out.println("Lower arm: .1");
+	    lowerArm.set(.5);
+	}
+	else if(j1.getRawButton(2))
+	{
+            System.out.println("Lower arm: -.1");
+	    lowerArm.set(-.5);
+	}
+	else
+	{
+	    lowerArm.set(0);
+	}
+	//feedMe.feed();
+    }
+
+    public void updateUpperArm()
+    {
+        System.out.println("UPPER ARM FUNCTION CALL");
+        if(j2.getRawButton(3))
+        {
+            System.out.println("Upper arm: .1");
+            upperArm.set(.5);
+        }
+        else if (j2.getRawButton(2))
+        {
+            System.out.println("Upper arm: -.1");
+            upperArm.set(-.5);
+        }
+        else
+        {
+            lowerArm.set(0);
+        }
+        //feedMe.feed();
+    }
+
     /*public void ultraSonicAct()
     {
         System.out.println(ultraSonic.getRangeMM() + "\t" + ultraSonic.isRangeValid());
