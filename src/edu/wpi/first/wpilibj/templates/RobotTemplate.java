@@ -34,7 +34,10 @@ public class RobotTemplate extends IterativeRobot
 
     Joystick j1 = new Joystick(1);
     Joystick j2 = new Joystick(2);
+<<<<<<< HEAD
     Joystick controller = new Joystick(3);
+=======
+>>>>>>> dbbee9498b8279fa154d3ef4c38b20c76d51db95
     CANJaguar fLeft, fRight, bLeft, bRight,unused1, unused2, lowerArm, upperArm; //motors
     DigitalOutput output; // for ultrasonic
     DigitalInput input;
@@ -292,6 +295,7 @@ public class RobotTemplate extends IterativeRobot
             lastRange = 0;
         }
         return false;
+<<<<<<< HEAD
 
     }
 
@@ -340,6 +344,47 @@ public class RobotTemplate extends IterativeRobot
                 lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
                 lcd.updateLCD();
             }
+=======
+    
+    }
+
+    public void updateLowerArm()
+    {//state machine for the lower arm
+        System.out.println("LOWER ARM FUNCTION CALL");
+	if(j1.getRawButton(3))
+	{
+            System.out.println("Lower arm: .1");
+	    lowerArm.set(.5);
+	}
+	else if(j1.getRawButton(2))
+	{
+            System.out.println("Lower arm: -.1");
+	    lowerArm.set(-.5);
+	}
+	else
+	{
+	    lowerArm.set(0);
+	}
+	//feedMe.feed();
+    }
+
+    public void updateUpperArm()
+    {
+        System.out.println("UPPER ARM FUNCTION CALL");
+        if(j2.getRawButton(3))
+        {
+            System.out.println("Upper arm: .1");
+            upperArm.set(.5);
+        }
+        else if (j2.getRawButton(2))
+        {
+            System.out.println("Upper arm: -.1");
+            upperArm.set(-.5);
+        }
+        else
+        {
+            lowerArm.set(0);
+>>>>>>> dbbee9498b8279fa154d3ef4c38b20c76d51db95
         }
         //feedMe.feed();
     }
