@@ -34,18 +34,23 @@ public class RobotTemplate extends IterativeRobot
 
     Joystick j1 = new Joystick(1);
     Joystick j2 = new Joystick(2);
-    Joystick controller = new Joystick(3);
-    CANJaguar fLeft, fRight, bLeft, bRight,unused1, unused2, lowerArm, upperArm; //motors
+    CANJaguar fLeft, fRight, bLeft, bRight,unused1, unused2; //motors
     DigitalOutput output; // for ultrasonic
     DigitalInput input;
     Ultrasonic ultraSonic;
-    AxisCamera cam; // camera
+    //AxisCamera cam; // camera
     Timer timer = new Timer(); // timer
     DigitalInput left; // for LineTracker
     DigitalInput middle;
     DigitalInput right;
     DriverStation ds;
     boolean forkLeft;
+    boolean pauseAtBegin; //Will the robot pause at the beginning of autonomous before moving?
+    boolean stopAfterHang; //Will the robot stop after it hangs a ubertube?
+    boolean turnAfterHang; //Will the robot turn as it's backing away, or go straight back? (Assuming that stopAfterHang is false)
+    boolean hasHangedTube; // Has the robot hanged its ubertube (or at least attempted to)?
+    boolean hasAlreadyPaused; //Has the robot already paused at the beginning? (Assuming that pauseAtBegin is true)
+    boolean doneWithAuto; //Has the robot done what it needs to in auto mode?
 
     public void robotInit()
     {
@@ -55,9 +60,6 @@ public class RobotTemplate extends IterativeRobot
                 fRight = new CANJaguar(4);
                 bLeft = new CANJaguar(9);
                 bRight = new CANJaguar(7);
-                lowerArm = new CANJaguar(5);
-                upperArm = new CANJaguar(8);
-
                // setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
                // setCoast(fRight);
                // setCoast(bLeft);
@@ -67,6 +69,7 @@ public class RobotTemplate extends IterativeRobot
                 middle = new DigitalInput(2);
                 right = new DigitalInput(14);
 
+
                 output = new DigitalOutput(10); // ultrasonic output
                 input = new DigitalInput(8); //ultrasonic input
                 ultraSonic  = new Ultrasonic(output, input, Ultrasonic.Unit.kMillimeter); //initialize ultrasonic
@@ -74,6 +77,11 @@ public class RobotTemplate extends IterativeRobot
                 ultraSonic.setAutomaticMode(true);
 
                 ds = DriverStation.getInstance();
+
+                hasHangedTube = false;
+                hasAlreadyPaused = false;
+                doneWithAuto = false;
+
             } catch (Exception e) { e.printStackTrace(); }
         timer.delay(1);
     }
@@ -82,13 +90,17 @@ public class RobotTemplate extends IterativeRobot
      * This function is called periodically during autonomous
      */
 
-    boolean atFork = false; // if robot has arrived at fork
     int lastSense = 0; // last LineTracker which saw line (1 for left, 2 for right)
     public void autonomousPeriodic()
     {
-
-
+         if (doneWithAuto)
+         {
+             return;
+         }
          forkLeft =  ds.getDigitalIn(1);//left
+         pauseAtBegin = ds.getDigitalIn(2);
+         stopAfterHang = ds.getDigitalIn(3);
+         turnAfterHang = !stopAfterHang && ds.getDigitalIn(4); //This will only be true if stopAfterHang is false
          boolean leftValue = left.get();
          boolean middleValue = middle.get();
          boolean rightValue = right.get();
@@ -98,14 +110,182 @@ public class RobotTemplate extends IterativeRobot
                         (int)(middleValue?2:0)+
                         (int)(leftValue?4:0);
 
+        if (hasHangedTube && !turnAfterHang) //If the robot has hanged the tube, and then should back straight up...
+            {
+                straight(-speed); // Back straight up
+                try
+                {
+                    Thread.sleep(2000); //And after two seconds...
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                straight(0); //Stop backing up
+                doneWithAuto = true;
+                return;
+            }
+        else if (hasHangedTube && turnAfterHang) //If the robot has hanged the tube, and then should turn around...
+            {
+                straight(-speed); //Back straight up
+                try
+                {
+                    Thread.sleep(2000); //And after two seconds...
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                hardRight(speed); //Start turning around
+                try
+                {
+                    Thread.sleep(3000);
+                    while(!middleValue)
+                        Thread.sleep(50);
+                    straight(0);
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                straight(0); //Stop turning around
+                doneWithAuto = true;
+                return;
+         }
+
          if(closerThan(500))
         {
-            //System.out.println("I should stop");
-            straight(0);
+            straight(0); //Stop
+
+            //Here I'm guessing we'd have the hangTube() method
+
+            hasHangedTube = true;
+            if (stopAfterHang) //If the robot is supposed to stay put after it hangs a tube
+                doneWithAuto = true;
             return;
         }
 
-        switch (lineState)
+        if (pauseAtBegin && !hasAlreadyPaused) //If the robot should pause at the beginning and it hasn't already paused...
+        {
+            try
+            {
+                Thread.sleep(3000); //Pause for 3 seconds
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+
+            hasAlreadyPaused = true; //The robot has now paused
+            System.out.print("Checkpoint 1");
+        }
+        System.out.print("Checkpoint 2");
+        moveWhileTracking(lineState, speed);
+
+    }
+
+    public void teleopPeriodic()
+    {
+        try{
+        setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
+        setCoast(fRight);
+        setCoast(bLeft);
+        setCoast(bRight);
+        }catch (Exception e) {}
+
+        setLefts(deadzone(-j1.getY()));
+        setRights(deadzone(-j2.getY()));
+    }
+
+    private void setLefts(double d)
+    {
+        try{
+        fLeft.setX(d);
+        bLeft.setX(d);
+        } catch (CANTimeoutException e){
+            DriverStationLCD lcd = DriverStationLCD.getInstance();
+            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN on the Left!!!");
+            lcd.updateLCD();
+        }
+    }
+
+    private void setRights(double d)
+    {
+        try{
+        fRight.setX(-d);
+        bRight.setX(-d);
+        } catch (CANTimeoutException e){
+            e.printStackTrace();
+            DriverStationLCD lcd = DriverStationLCD.getInstance();
+            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN on the Right!!!");
+            lcd.updateLCD();
+        }
+    }
+
+    public void setCoast(CANJaguar jag) throws CANTimeoutException
+    {//Sets the drive motors to coast mode
+        try{jag.configNeutralMode(CANJaguar.NeutralMode.kCoast);} catch (Exception e) {e.printStackTrace();}
+    }
+
+    public double deadzone(double d)
+    {//deadzone for input devices
+        if (Math.abs(d) < .05) {
+            return 0;
+        }
+        return d / Math.abs(d) * ((Math.abs(d) - .05) / .95);
+    }
+
+    public void straight(double speed)
+    {
+        setLefts(speed);
+        setRights(speed);
+    }
+
+    public void hardLeft(double speed)
+    {
+        setLefts(-speed);
+        setRights(speed);
+    }
+
+    public void hardRight(double speed)
+    {
+        setLefts(speed);
+        setRights(-speed);
+    }
+
+    public void softLeft(double speed)
+    {
+        setLefts(0);
+        setRights(speed);
+    }
+
+    public void softRight(double speed)
+    {
+        setLefts(speed);
+        setRights(0);
+    }
+
+    int lastRange = 0; // ascertains that you are less than 1500mm
+    public boolean closerThan(int millimeters)
+    {
+        if (ultraSonic.isRangeValid() && ultraSonic.getRangeMM() < millimeters)
+        {
+            if (lastRange > 4) // 4 checks to stop
+            {
+                return true;
+            }
+            else lastRange++;
+        }
+        else
+        {
+            lastRange = 0;
+        }
+        return false;
+    }
+
+    public void moveWhileTracking(int lineState, double speed)
+    {
+      switch (lineState)
         {
             case 0: //No sensors see the line
                 System.out.println("Lost the line: " + lastSense);
@@ -170,188 +350,8 @@ public class RobotTemplate extends IterativeRobot
                 break;
             default:
                 System.out.println("You're doomed. Run.");
-
         }
 
 
-
     }
-
-    public void teleopPeriodic()
-    {
-        try{
-        setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
-        setCoast(fRight);
-        setCoast(bLeft);
-        setCoast(bRight);
-        setBreak(lowerArm);
-        setBreak(upperArm);
-        }catch (Exception e) {}
-
-        setLefts(deadzone(-j1.getY()));
-        setRights(deadzone(-j2.getY()));
-        updateLowerArm();
-        updateUpperArm();
-    }
-
-    private void setLefts(double d)
-    {
-        try{
-        fLeft.setX(d);
-        bLeft.setX(d);
-        } catch (CANTimeoutException e){
-            DriverStationLCD lcd = DriverStationLCD.getInstance();
-            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN on the Left!!!");
-            lcd.updateLCD();
-        }
-    }
-
-    private void setRights(double d)
-    {
-        try{
-        fRight.setX(-d);
-        bRight.setX(-d);
-        } catch (CANTimeoutException e){
-            e.printStackTrace();
-            DriverStationLCD lcd = DriverStationLCD.getInstance();
-            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN on the Right!!!");
-            lcd.updateLCD();
-        }
-    }
-
-    public void setCoast(CANJaguar jag) throws CANTimeoutException
-    {//Sets the drive motors to coast mode
-        try{jag.configNeutralMode(CANJaguar.NeutralMode.kCoast);} catch (Exception e) {e.printStackTrace();}
-    }
-
-     public void setBreak(CANJaguar jag) throws CANTimeoutException
-    {//Sets the drive motors to brake mode
-        try{jag.configNeutralMode(CANJaguar.NeutralMode.kBrake);} catch (Exception e) {e.printStackTrace();}
-    }
-
-    public double deadzone(double d)
-    {//deadzone for input devices
-        if (Math.abs(d) < .05) {
-            return 0;
-        }
-        return d / Math.abs(d) * ((Math.abs(d) - .05) / .95);
-    }
-    //comment
-    public double rampArm(double input)
-    {
-        if(input < 0)
-        {
-            return input * 0.01;
-        }
-        else return input;
-
-    }
-
-    public void straight(double speed)
-    {
-        setLefts(speed);
-        setRights(speed);
-    }
-
-    public void hardLeft(double speed)
-    {
-        setLefts(-speed);
-        setRights(speed);
-    }
-
-    public void hardRight(double speed)
-    {
-        setLefts(speed);
-        setRights(-speed);
-    }
-
-    public void softLeft(double speed)
-    {
-        setLefts(0);
-        setRights(speed);
-    }
-
-    public void softRight(double speed)
-    {
-        setLefts(speed);
-        setRights(0);
-    }
-
-    int lastRange = 0; // ascertains that you are less than 1500mm
-    public boolean closerThan(int millimeters)
-    {
-        if (ultraSonic.isRangeValid() && ultraSonic.getRangeMM() < millimeters)
-        {
-            if (lastRange > 4) // 4 checks to stop
-            {
-                return true;
-            }
-            else lastRange++;
-        }
-        else
-        {
-            lastRange = 0;
-        }
-        return false;
-
-    }
-
-    public void updateLowerArm()
-    {//state machine for the lower arm
-        try{
-            lowerArm.setX(deadzone(controller.getZ()));
-         } catch (CANTimeoutException e){
-                DriverStationLCD lcd = DriverStationLCD.getInstance();
-                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
-                lcd.updateLCD();
-            }
-
-    }
-
-    public void updateUpperArm()
-    {
-        if(controller.getRawButton(6))
-        {
-            System.out.println("Upper arm: .5");
-            try{
-            upperArm.setX(0.5);
-             } catch (CANTimeoutException e){
-                DriverStationLCD lcd = DriverStationLCD.getInstance();
-                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
-                lcd.updateLCD();
-            }
-        }
-        else if (controller.getRawButton(5))
-        {
-            System.out.println("Upper arm: -.5");
-            try{
-            upperArm.setX(-0.35);
-             } catch (CANTimeoutException e){
-                DriverStationLCD lcd = DriverStationLCD.getInstance();
-                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
-                lcd.updateLCD();
-            }
-        }
-        else
-        {
-            try{
-            upperArm.setX(0.0);
-             } catch (CANTimeoutException e){
-                DriverStationLCD lcd = DriverStationLCD.getInstance();
-                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
-                lcd.updateLCD();
-            }
-        }
-        //feedMe.feed();
-    }
-
-    /*public void ultraSonicAct()
-    {
-        System.out.println(ultraSonic.getRangeMM() + "\t" + ultraSonic.isRangeValid());
-        if (ultraSonic.isRangeValid() && ultraSonic.getRangeMM() <= 100)
-        {
-            System.out.print("Object is within 100 mm of sensor");
-        }
-    }*/
-
 }
