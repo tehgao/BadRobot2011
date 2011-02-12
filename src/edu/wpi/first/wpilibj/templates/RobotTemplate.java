@@ -96,6 +96,12 @@ public class RobotTemplate extends IterativeRobot
     int lastSense = 0; // last LineTracker which saw line (1 for left, 2 for right)
     public void autonomousPeriodic()
     {
+        try{
+         setBreak(fLeft);
+         setBreak(fRight);
+         setBreak(bLeft);
+         setBreak(bRight);
+         }catch (Exception e) {}
          if (doneWithAuto)
          {
              return;
@@ -209,7 +215,7 @@ public class RobotTemplate extends IterativeRobot
         bLeft.setX(d);
         } catch (CANTimeoutException e){
             DriverStationLCD lcd = DriverStationLCD.getInstance();
-            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN on the Left!!!");
+            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN EXPTION");
             lcd.updateLCD();
         }
     }
@@ -222,7 +228,7 @@ public class RobotTemplate extends IterativeRobot
         } catch (CANTimeoutException e){
             e.printStackTrace();
             DriverStationLCD lcd = DriverStationLCD.getInstance();
-            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN on the Right!!!");
+            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN EXEPTION!!!");
             lcd.updateLCD();
         }
     }
@@ -245,15 +251,7 @@ public class RobotTemplate extends IterativeRobot
         return d / Math.abs(d) * ((Math.abs(d) - .05) / .95);
     }
     //comment
-    public double rampArm(double input)
-    {
-        if(input < 0)
-        {
-            return input * 0.01;
-        }
-        else return input;
-
-    }
+   
 
     public void straight(double speed)
     {
@@ -303,7 +301,6 @@ public class RobotTemplate extends IterativeRobot
         return false;
 
     }
-
     public void updateLowerArm()
     {//state machine for the lower arm
         try{
@@ -392,6 +389,7 @@ public class RobotTemplate extends IterativeRobot
                 softLeft(speed);
                 lastSense = 1;
                 break;
+                
             case 5: //Left and right see the line
                 System.out.println("At Cross");
                 if(forkLeft)
