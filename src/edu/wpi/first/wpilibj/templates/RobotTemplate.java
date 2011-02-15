@@ -18,6 +18,8 @@ import edu.wpi.first.wpilibj.camera.AxisCamera;
 import edu.wpi.first.wpilibj.can.CANTimeoutException;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStationLCD;
+import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.Solenoid;
 /**
  * The VM is configured to automatically run this class, and to call the
  * functions corresponding to each mode, as described in the IterativeRobot
@@ -35,7 +37,7 @@ public class RobotTemplate extends IterativeRobot
     Joystick j1 = new Joystick(1);
     Joystick j2 = new Joystick(2);
     Joystick controller = new Joystick(3);
-    CANJaguar fLeft, fRight, bLeft, bRight,unused1, unused2, lowerArm, upperArm; //motors
+    CANJaguar fLeft, fRight, bLeft, bRight; //lowerArm, upperArm; //motors
     DigitalOutput output; // for ultrasonic
     DigitalInput input;
     Ultrasonic ultraSonic;
@@ -45,6 +47,8 @@ public class RobotTemplate extends IterativeRobot
     DigitalInput middle;
     DigitalInput right;
     DriverStation ds;
+    Compressor air;
+    Solenoid shifter;
     boolean forkLeft;
     boolean pauseAtBegin; //Will the robot pause at the beginning of autonomous before moving?
     boolean stopAfterHang; //Will the robot stop after it hangs a ubertube?
@@ -61,8 +65,8 @@ public class RobotTemplate extends IterativeRobot
                 fRight = new CANJaguar(4);
                 bLeft = new CANJaguar(9);
                 bRight = new CANJaguar(7);
-                lowerArm = new CANJaguar(5);
-                upperArm = new CANJaguar(8);
+               // lowerArm = new CANJaguar(5);
+              //  upperArm = new CANJaguar(8);
 
                // setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
                // setCoast(fRight);
@@ -78,6 +82,9 @@ public class RobotTemplate extends IterativeRobot
                 ultraSonic  = new Ultrasonic(output, input, Ultrasonic.Unit.kMillimeter); //initialize ultrasonic
                 ultraSonic.setEnabled(true);
                 ultraSonic.setAutomaticMode(true);
+
+                air = new Compressor(1,1);
+                shifter = new Solenoid(8,1);
 
                 ds = DriverStation.getInstance();
                 hasHangedTube = false;
@@ -109,7 +116,8 @@ public class RobotTemplate extends IterativeRobot
          forkLeft =  ds.getDigitalIn(1);//left
          pauseAtBegin = ds.getDigitalIn(2);
          stopAfterHang = ds.getDigitalIn(3);
-         turnAfterHang = !stopAfterHang && ds.getDigitalIn(4); //This will only be true if stopAfterHang is false
+         turnAfterHang = !stopAfterHang && ds.getDigitalIn(4);//This will only be true if stopAfterHang is false
+         updateComp();
          boolean leftValue = left.get();
          boolean middleValue = middle.get();
          boolean rightValue = right.get();
@@ -190,7 +198,7 @@ public class RobotTemplate extends IterativeRobot
         moveWhileTracking(lineState, speed);
 
     }
-
+  
     public void teleopPeriodic()
     {
         try{
@@ -198,14 +206,17 @@ public class RobotTemplate extends IterativeRobot
         setCoast(fRight);
         setCoast(bLeft);
         setCoast(bRight);
-        setBreak(lowerArm);
-        setBreak(upperArm);
+        //setBreak(lowerArm);
+        //setBreak(upperArm);
         }catch (Exception e) {}
+        updateComp();
+        updateGear();
+
 
         setLefts(deadzone(-j1.getY()));
         setRights(deadzone(-j2.getY()));
-        updateLowerArm();
-        updateUpperArm();
+       // updateLowerArm();
+       // updateUpperArm();
     }
 
     private void setLefts(double d)
@@ -236,6 +247,26 @@ public class RobotTemplate extends IterativeRobot
     public void setCoast(CANJaguar jag) throws CANTimeoutException
     {//Sets the drive motors to coast mode
         try{jag.configNeutralMode(CANJaguar.NeutralMode.kCoast);} catch (Exception e) {e.printStackTrace();}
+    }
+
+    public void updateComp()
+    {
+        if (air.getPressureSwitchValue())
+            air.stop();
+        else
+            air.start();
+    }
+
+    boolean switchStateShift = false;
+    public void updateGear()
+    {
+         if(j1.getTrigger() || j2.getTrigger())
+            switchStateShift = true;
+        else if(switchStateShift)
+        {
+            shifter.set(!shifter.get());
+            switchStateShift = false;
+        }
     }
 
      public void setBreak(CANJaguar jag) throws CANTimeoutException
@@ -301,7 +332,7 @@ public class RobotTemplate extends IterativeRobot
         return false;
 
     }
-    public void updateLowerArm()
+   /* public void updateLowerArm()
     {//state machine for the lower arm
         try{
             lowerArm.setX(deadzone(controller.getZ()));
@@ -349,7 +380,7 @@ public class RobotTemplate extends IterativeRobot
         }
         //feedMe.feed();
     }
-
+    */
     public void moveWhileTracking(int lineState, double speed)
     {
       switch (lineState)
