@@ -85,6 +85,7 @@ public class RobotTemplate extends IterativeRobot
 
                 air = new Compressor(1,1);
                 shifter = new Solenoid(8,1);
+                shifter.set(false);
 
                 ds = DriverStation.getInstance();
                 hasHangedTube = false;
@@ -103,6 +104,8 @@ public class RobotTemplate extends IterativeRobot
     int lastSense = 0; // last LineTracker which saw line (1 for left, 2 for right)
     public void autonomousPeriodic()
     {
+
+
         try{
          setBreak(fLeft);
          setBreak(fRight);
@@ -231,6 +234,15 @@ public class RobotTemplate extends IterativeRobot
         }
     }
 
+    private void updateDS()
+    {
+        ds.setDigitalOut(1, forkLeft);
+        ds.setDigitalOut(2, pauseAtBegin);
+        ds.setDigitalOut(3, stopAfterHang);
+        ds.setDigitalOut(4, turnAfterHang);
+        ds.setDigitalOut(5,  shifter.get());
+    }
+
     private void setRights(double d)
     {
         try{
@@ -239,7 +251,7 @@ public class RobotTemplate extends IterativeRobot
         } catch (CANTimeoutException e){
             e.printStackTrace();
             DriverStationLCD lcd = DriverStationLCD.getInstance();
-            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN EXEPTION!!!");
+            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN EXcEPTION!!!");
             lcd.updateLCD();
         }
     }
@@ -260,13 +272,22 @@ public class RobotTemplate extends IterativeRobot
     boolean switchStateShift = false;
     public void updateGear()
     {
-         if(j1.getTrigger() || j2.getTrigger())
+        /** if(j1.getTrigger() || j2.getTrigger())
             switchStateShift = true;
         else if(switchStateShift)
         {
             shifter.set(!shifter.get());
             switchStateShift = false;
+        }**/
+        if(j1.getTrigger())
+        {
+            shifter.set(true);
         }
+        else if(j2.getTrigger())
+        {
+            shifter.set(false);
+        }
+
     }
 
      public void setBreak(CANJaguar jag) throws CANTimeoutException
