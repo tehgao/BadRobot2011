@@ -91,6 +91,7 @@ public class RobotTemplate extends IterativeRobot
                 hasHangedTube = false;
                 hasAlreadyPaused = false;
                 doneWithAuto = false;
+                updateDS();
 
             } catch (Exception e) { e.printStackTrace(); }
         timer.delay(1);
@@ -121,6 +122,7 @@ public class RobotTemplate extends IterativeRobot
          stopAfterHang = ds.getDigitalIn(3);
          turnAfterHang = !stopAfterHang && ds.getDigitalIn(4);//This will only be true if stopAfterHang is false
          updateComp();
+         updateDS();
          boolean leftValue = left.get();
          boolean middleValue = middle.get();
          boolean rightValue = right.get();
@@ -214,6 +216,7 @@ public class RobotTemplate extends IterativeRobot
         }catch (Exception e) {}
         updateComp();
         updateGear();
+        updateDS();
 
 
         setLefts(deadzone(-j1.getY()));
@@ -229,7 +232,7 @@ public class RobotTemplate extends IterativeRobot
         bLeft.setX(d);
         } catch (CANTimeoutException e){
             DriverStationLCD lcd = DriverStationLCD.getInstance();
-            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN EXPTION");
+            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN EXCEPTION");
             lcd.updateLCD();
         }
     }
@@ -237,10 +240,12 @@ public class RobotTemplate extends IterativeRobot
     private void updateDS()
     {
         ds.setDigitalOut(1, forkLeft);
+        System.out.println(ds.getDigitalOut(1));
         ds.setDigitalOut(2, pauseAtBegin);
         ds.setDigitalOut(3, stopAfterHang);
         ds.setDigitalOut(4, turnAfterHang);
         ds.setDigitalOut(5,  shifter.get());
+        System.out.println("Updated");
     }
 
     private void setRights(double d)
@@ -251,7 +256,7 @@ public class RobotTemplate extends IterativeRobot
         } catch (CANTimeoutException e){
             e.printStackTrace();
             DriverStationLCD lcd = DriverStationLCD.getInstance();
-            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN EXcEPTION!!!");
+            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN EXCEPTION!!!");
             lcd.updateLCD();
         }
     }
