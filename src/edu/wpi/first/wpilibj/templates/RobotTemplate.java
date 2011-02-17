@@ -18,8 +18,10 @@ import edu.wpi.first.wpilibj.camera.AxisCamera;
 import edu.wpi.first.wpilibj.can.CANTimeoutException;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStationLCD;
+import edu.wpi.first.wpilibj.AnalogChannel;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.Solenoid;
+import edu.wpi.first.wpilibj.Victor;
 /**
  * The VM is configured to automatically run this class, and to call the
  * functions corresponding to each mode, as described in the IterativeRobot
@@ -38,6 +40,7 @@ public class RobotTemplate extends IterativeRobot
     Joystick j2 = new Joystick(2);
     Joystick controller = new Joystick(3);
     CANJaguar fLeft, fRight, bLeft, bRight; //lowerArm, upperArm; //motors
+    Victor upperArm, lowerArm;
     DigitalOutput output; // for ultrasonic
     DigitalInput input;
     Ultrasonic ultraSonic;
@@ -56,6 +59,11 @@ public class RobotTemplate extends IterativeRobot
     boolean hasHangedTube; // Has the robot hanged its ubertube (or at least attempted to)?
     boolean hasAlreadyPaused; //Has the robot already paused at the beginning? (Assuming that pauseAtBegin is true)
     boolean doneWithAuto; //Has the robot done what it needs to in auto mode?
+    AnalogChannel upperArmChannel; //Channel that controls the arm
+    AnalogChannel lowerArmChannel;
+    DriverStationLCD lcd;
+    boolean upperArmRaised;
+    boolean lowerArmRaised;
 
     public void robotInit()
     {
@@ -65,8 +73,8 @@ public class RobotTemplate extends IterativeRobot
                 fRight = new CANJaguar(4);
                 bLeft = new CANJaguar(9);
                 bRight = new CANJaguar(7);
-               // lowerArm = new CANJaguar(5);
-              //  upperArm = new CANJaguar(8);
+               lowerArm = new Victor(5);
+              upperArm = new Victor(8);
 
                // setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
                // setCoast(fRight);
@@ -92,6 +100,17 @@ public class RobotTemplate extends IterativeRobot
                 hasAlreadyPaused = false;
                 doneWithAuto = false;
                 updateDS();
+
+                upperArmChannel = new AnalogChannel(1014);
+                upperArmChannel.initAccumulator();
+
+                lowerArmChannel = new AnalogChannel(1014);
+                lowerArmChannel.initAccumulator();
+
+                upperArmRaised = false;
+                lowerArmRaised = false;
+
+                lcd = DriverStationLCD.getInstance();
 
             } catch (Exception e) { e.printStackTrace(); }
         timer.delay(1);
@@ -227,10 +246,14 @@ public class RobotTemplate extends IterativeRobot
 
     private void setLefts(double d)
     {
-        try{
+        try
+        {
         fLeft.setX(d);
         bLeft.setX(d);
-        } catch (CANTimeoutException e){
+
+        } 
+        catch (CANTimeoutException e)
+        {
             DriverStationLCD lcd = DriverStationLCD.getInstance();
             lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN EXCEPTION");
             lcd.updateLCD();
@@ -386,9 +409,12 @@ public class RobotTemplate extends IterativeRobot
         else if (controller.getRawButton(5))
         {
             System.out.println("Upper arm: -.5");
-            try{
+            try
+            {
             upperArm.setX(-0.35);
-             } catch (CANTimeoutException e){
+            } 
+            catch (CANTimeoutException e)
+             {
                 DriverStationLCD lcd = DriverStationLCD.getInstance();
                 lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
                 lcd.updateLCD();
@@ -477,6 +503,34 @@ public class RobotTemplate extends IterativeRobot
                 System.out.println("You're doomed. Run.");
         }
 
+    }
+
+    public void raiseArm()
+    {
+        try
+        {
+        upperArm.setX(.3);
+        if (upperArmChannel.getAccumulatorValue() > 1014) //Placeholder
+            {
+                upperArm.setX(0);
+                upperArmRaised = true;
+            }
+        if (upperArmRaised)
+        {
+            lowerArm.setX(.3);
+            if (lowerArmChannel.getAccumulatorValue() > 1014)
+            {
+                lowerArm.setX(0);
+                lowerArmRaised = true;
+
+            }
+        }
+        }
+        catch (Exception e)
+        {
+            lcd.println(DriverStationLCD.Line.kMain6, 1, e.toString());
+
+        }
     }
 
 }
