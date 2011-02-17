@@ -18,6 +18,8 @@ import edu.wpi.first.wpilibj.camera.AxisCamera;
 import edu.wpi.first.wpilibj.can.CANTimeoutException;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStationLCD;
+import edu.wpi.first.wpilibj.AnalogChannel;
+
 /**
  * The VM is configured to automatically run this class, and to call the
  * functions corresponding to each mode, as described in the IterativeRobot
@@ -52,6 +54,12 @@ public class RobotTemplate extends IterativeRobot
     boolean hasHangedTube; // Has the robot hanged its ubertube (or at least attempted to)?
     boolean hasAlreadyPaused; //Has the robot already paused at the beginning? (Assuming that pauseAtBegin is true)
     boolean doneWithAuto; //Has the robot done what it needs to in auto mode?
+    AnalogChannel upperArmChannel; //Channel that controls the arm
+    AnalogChannel lowerArmChannel;
+    DriverStationLCD lcd;
+    boolean upperArmRaised;
+    boolean lowerArmRaised;
+    Solenoid 
 
     public void robotInit()
     {
@@ -83,6 +91,17 @@ public class RobotTemplate extends IterativeRobot
                 hasHangedTube = false;
                 hasAlreadyPaused = false;
                 doneWithAuto = false;
+
+                upperArmChannel = new AnalogChannel(1014);
+                upperArmChannel.initAccumulator();
+
+                lowerArmChannel = new AnalogChannel(1014);
+                lowerArmChannel.initAccumulator();
+
+                upperArmRaised = false;
+                lowerArmRaised = false;
+
+                lcd = DriverStationLCD.getInstance();
 
             } catch (Exception e) { e.printStackTrace(); }
         timer.delay(1);
@@ -207,8 +226,8 @@ public class RobotTemplate extends IterativeRobot
         try{
         fLeft.setX(d);
         bLeft.setX(d);
-        } catch (CANTimeoutException e){
-            DriverStationLCD lcd = DriverStationLCD.getInstance();
+        } catch (CANTimeoutException e)
+        {
             lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN on the Left!!!");
             lcd.updateLCD();
         }
@@ -332,9 +351,12 @@ public class RobotTemplate extends IterativeRobot
         else if (controller.getRawButton(5))
         {
             System.out.println("Upper arm: -.5");
-            try{
+            try
+            {
             upperArm.setX(-0.35);
-             } catch (CANTimeoutException e){
+            } 
+            catch (CANTimeoutException e)
+             {
                 DriverStationLCD lcd = DriverStationLCD.getInstance();
                 lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
                 lcd.updateLCD();
@@ -422,6 +444,34 @@ public class RobotTemplate extends IterativeRobot
                 System.out.println("You're doomed. Run.");
         }
 
+    }
+
+    public void raiseArm()
+    {
+        try
+        {
+        upperArm.setX(.3);
+        if (upperArmChannel.getAccumulatorValue() > 1014) //Placeholder
+            {
+                upperArm.setX(0);
+                upperArmRaised = true;
+            }
+        if (upperArmRaised)
+        {
+            lowerArm.setX(.3);
+            if (lowerArmChannel.getAccumulatorValue() > 1014)
+            {
+                lowerArm.setX(0);
+                lowerArmRaised = true;
+
+            }
+        }
+        }
+        catch (Exception e)
+        {
+            lcd.println(DriverStationLCD.Line.kMain6, 1, e.toString());
+
+        }
     }
 
 }
