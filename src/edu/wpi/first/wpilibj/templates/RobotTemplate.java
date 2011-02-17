@@ -381,15 +381,9 @@ public class RobotTemplate extends IterativeRobot
         return false;
 
     }
-   /* public void updateLowerArm()
+    public void updateLowerArm()
     {//state machine for the lower arm
-        try{
-            lowerArm.setX(deadzone(controller.getZ()));
-         } catch (CANTimeoutException e){
-                DriverStationLCD lcd = DriverStationLCD.getInstance();
-                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
-                lcd.updateLCD();
-            }
+            lowerArm.set(deadzone(controller.getZ()));
 
     }
 
@@ -398,41 +392,21 @@ public class RobotTemplate extends IterativeRobot
         if(controller.getRawButton(6))
         {
             System.out.println("Upper arm: .5");
-            try{
-            upperArm.setX(0.5);
-             } catch (CANTimeoutException e){
-                DriverStationLCD lcd = DriverStationLCD.getInstance();
-                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
-                lcd.updateLCD();
-            }
+            upperArm.set(0.5);
         }
         else if (controller.getRawButton(5))
         {
             System.out.println("Upper arm: -.5");
-            try
-            {
-            upperArm.setX(-0.35);
-            } 
-            catch (CANTimeoutException e)
-             {
-                DriverStationLCD lcd = DriverStationLCD.getInstance();
-                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
-                lcd.updateLCD();
-            }
+            upperArm.set(-0.35);
         }
         else
         {
-            try{
-            upperArm.setX(0.0);
-             } catch (CANTimeoutException e){
-                DriverStationLCD lcd = DriverStationLCD.getInstance();
-                lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
-                lcd.updateLCD();
+            
+            upperArm.set(0.0);
+            
             }
         }
-        //feedMe.feed();
-    }
-    */
+    
     public void moveWhileTracking(int lineState, double speed)
     {
       switch (lineState)
@@ -509,18 +483,18 @@ public class RobotTemplate extends IterativeRobot
     {
         try
         {
-        upperArm.setX(.3);
+        upperArm.set(.3);
         if (upperArmChannel.getAccumulatorValue() > 1014) //Placeholder
             {
-                upperArm.setX(0);
+                upperArm.set(0);
                 upperArmRaised = true;
             }
         if (upperArmRaised)
         {
-            lowerArm.setX(.3);
+            lowerArm.set(.3);
             if (lowerArmChannel.getAccumulatorValue() > 1014)
             {
-                lowerArm.setX(0);
+                lowerArm.set(0);
                 lowerArmRaised = true;
 
             }
