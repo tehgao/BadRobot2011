@@ -39,7 +39,7 @@ public class RobotTemplate extends IterativeRobot
     Joystick j2 = new Joystick(2);
     Joystick controller = new Joystick(3);
     CANJaguar fLeft, fRight, bLeft, bRight; //lowerArm, upperArm; //motors
-    Victor upperArm, lowerArm;
+    Victor Elbow, Sholder;
     DigitalOutput output; // for ultrasonic
     DigitalInput input;
     Ultrasonic ultraSonic;
@@ -55,10 +55,10 @@ public class RobotTemplate extends IterativeRobot
 
     Solenoid Kraken;
 
-    boolean forkLeft;
-    boolean pauseAtBegin; //Will the robot pause at the beginning of autonomous before moving?
-    boolean stopAfterHang; //Will the robot stop after it hangs a ubertube?
-    boolean turnAfterHang; //Will the robot turn as it's backing away, or go straight back? (Assuming that stopAfterHang is false)
+    boolean forkLeft = false;
+    boolean pauseAtBegin = false; //Will the robot pause at the beginning of autonomous before moving?
+    boolean stopAfterHang = false; //Will the robot stop after it hangs a ubertube?
+    boolean turnAfterHang = false; //Will the robot turn as it's backing away, or go straight back? (Assuming that stopAfterHang is false)
     boolean hasHangedTube; // Has the robot hanged its ubertube (or at least attempted to)?
     boolean hasAlreadyPaused; //Has the robot already paused at the beginning? (Assuming that pauseAtBegin is true)
     boolean doneWithAuto; //Has the robot done what it needs to in auto mode?
@@ -67,10 +67,7 @@ public class RobotTemplate extends IterativeRobot
     boolean upperArmRaised;
     boolean lowerArmRaised;
 
-    DigitalInput upperLimitS = new DigitalInput(9);
-    DigitalInput lowerLimitS = new DigitalInput(10);
-    DigitalInput upperLimitE = new DigitalInput(11);
-    DigitalInput lowerLimitE = new DigitalInput(12);
+    DigitalInput upperLimitS, lowerLimitS, upperLimitE, lowerLimitE;
 
 
     Encoder upperArmEncoder;
@@ -82,26 +79,25 @@ public class RobotTemplate extends IterativeRobot
     {
             try
             {
+
+                upperLimitS = new DigitalInput(9);
+                lowerLimitS = new DigitalInput(10);
+                upperLimitE = new DigitalInput(11);
+                lowerLimitE = new DigitalInput(12);
+
                 fLeft = new CANJaguar(10); // motors for wheels with CAN ports as arguements
                 fRight = new CANJaguar(4);
                 bLeft = new CANJaguar(9);
                 bRight = new CANJaguar(7);
-                lowerArm = new Victor(2);
-                upperArm = new Victor(3);
+                Sholder = new Victor(1);
+                Elbow = new Victor(3);
 
-                left = new DigitalInput(3); // for LineTracker
-                middle = new DigitalInput(2);
-                right = new DigitalInput(14);
+                left = new DigitalInput(8); // for LineTracker
+                middle = new DigitalInput(6);
+                right = new DigitalInput(4);
 
-                //arm limit switches
-                upper1 = new DigitalInput();
-                upper2 = new DigitalInput();
-                lower1 = new DigitalInput();
-                lower2 = new DigitalInput();
-                DigitalInput armSwitches[] = {upper1, upper2, lower1, lower2};
-
-                output = new DigitalOutput(10); // ultrasonic output
-                input = new DigitalInput(8); //ultrasonic input
+                output = new DigitalOutput(2); // ultrasonic output
+                input = new DigitalInput(3); //ultrasonic input
                 ultraSonic = new Ultrasonic(output, input, Ultrasonic.Unit.kMillimeter); //initialize ultrasonic
                 ultraSonic.setEnabled(true);
                 ultraSonic.setAutomaticMode(true);
@@ -110,8 +106,8 @@ public class RobotTemplate extends IterativeRobot
                 shifter = new Solenoid(8,1);
                 shifter.set(false);
 
-                Kraken = new Solenoid(9,1); //Change Later!!!!!!!!!!!!!!!
-                Kraken.set(false);
+                //Kraken = new Solenoid(9,1); //Change Later!!!!!!!!!!!!!!!
+                //Kraken.set(false);
 
                 ds = DriverStation.getInstance();
                 hasHangedTube = false;
@@ -131,24 +127,18 @@ public class RobotTemplate extends IterativeRobot
 
                 lcd = DriverStationLCD.getInstance();
 
-<<<<<<< HEAD
                 cam = AxisCamera.getInstance();
 
-                upperArmEncoder = new Encoder(1,1); //Needs channels
-                lowerArmEncoder = new Encoder(1,1);
-                upperArmEncoder.reset(); //"Zero out" the encoders
-                lowerArmEncoder.reset();
+                //upperArmEncoder = new Encoder(1,1); //Needs channels
+                //lowerArmEncoder = new Encoder(1,2);
+                //upperArmEncoder.reset(); //"Zero out" the encoders
+               // lowerArmEncoder.reset();
             } 
             catch (Exception e)
             {
                 e.printStackTrace();
             }
-=======
-                CheckLimit updateLimitSwitches = new CheckLimit(armSwitches, lowerArm, upperArm);
-                updateLimitSwitches.run();
 
-            } catch (Exception e) { e.printStackTrace(); }
->>>>>>> b3f35da14e5db44be2343bfcba17c152d92f2d94
         timer.delay(1);
     }
 
@@ -280,8 +270,8 @@ public class RobotTemplate extends IterativeRobot
 
         setLefts(deadzone(-j1.getY()));
         setRights(deadzone(-j2.getY()));
-       // updateLowerArm();
-       // updateUpperArm();
+        updateLowerArm();
+        updateUpperArm();
     }
 
     private void setLefts(double d)
@@ -307,12 +297,10 @@ public class RobotTemplate extends IterativeRobot
         ds.setDigitalOut(3, stopAfterHang);
         ds.setDigitalOut(4, turnAfterHang);
         ds.setDigitalOut(5, shifter.get());
-        System.out.println(ds.getDigitalOut(1));
         ds.setDigitalOut(2, pauseAtBegin);
         ds.setDigitalOut(3, stopAfterHang);
         ds.setDigitalOut(4, turnAfterHang);
         ds.setDigitalOut(5,  shifter.get());
-        System.out.println("Updated");
     }
 
     private void setRights(double d)
@@ -479,28 +467,13 @@ lcd.updateLCD();
 */
     public void updateLowerArm()
     {
-        
-        if(j1.getRawButton(2))
-        {
-            lowerArm.set(0.5);
-        }
-        else if(j2.getRawButton(2))
-        {
-            lowerArm.set(-0.5);
-        }
+           // Sholder.set(deadzone(j1.getY()));
     }
 
     public void updateUpperArm()
     {
 
-         if(j1.getRawButton(3))
-        {
-            upperArm.set(0.5);
-        }
-        else if(j2.getRawButton(3))
-        {
-            upperArm.set(-0.5);
-        }
+        // Elbow.set(deadzone(j2.getY()));
        /* if(controller.getRawButton(6))
         {
             System.out.println("Upper arm: .5");
@@ -598,16 +571,16 @@ lcd.updateLCD();
                 case 0:
                     if (!upperLimitS.get()) //uarm limit switch is not reached)
                     {
-                        upperArm.set(0.3);
+                        Elbow.set(0.3);
                     }
                     if (!upperLimitE.get()) // larm limitt switch is not rezched
                     {
-                        lowerArm.set(0.3);
+                        Sholder.set(0.3);
                     }
                     if (upperLimitS.get() && upperLimitE.get())
                     {
-                        lowerArm.set(0);
-                        upperArm.set(0);
+                        Sholder.set(0);
+                        Elbow.set(0);
                         autoState = 1; // lowerArm and uarm are limit switch boolean
                     }
                     break;
@@ -624,10 +597,13 @@ lcd.updateLCD();
                     {
                        if(countToDistS() > 1014)
                        {
-                           lowerArm.set(-0.2);
+                           Sholder.set(-0.2);
                        }
                         else
-                        autoState=3;
+                        {
+                            Sholder.set(0);
+                            autoState=3;
+                        }
                     }
                      else
                         autoState = 3;
@@ -655,12 +631,12 @@ lcd.updateLCD();
 
     public int countToDistS()
     {
-        return lowerArmEncoder.get();
+        return 0; //lowerArmEncoder.get();
     }
 
      private double countToDistE()
     {
-        return upperArmEncoder.get();
+        return 0;//upperArmEncoder.get();
     }
 
 }

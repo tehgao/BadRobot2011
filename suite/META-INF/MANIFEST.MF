@@ -1,11 +1,6 @@
 Manifest-Version: 1.0
-<<<<<<< HEAD
-Ant-Version: Apache Ant 1.8.1
-Created-By: 1.6.0_18-b07 (Sun Microsystems Inc.)
-=======
 Ant-Version: Apache Ant 1.7.1
 Created-By: 14.2-b01 (Sun Microsystems Inc.)
->>>>>>> a8e5c50e6ee1a96eae535e6a40d4301ddb5b6fca
 MIDlet-Name: RobotTemplate
 MIDlet-Version: 1.0.0
 MIDlet-Vendor: FIRST
