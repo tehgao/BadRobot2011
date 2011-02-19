@@ -73,8 +73,8 @@ public class RobotTemplate extends IterativeRobot
                 fRight = new CANJaguar(4);
                 bLeft = new CANJaguar(9);
                 bRight = new CANJaguar(7);
-               lowerArm = new Victor(5);
-              upperArm = new Victor(8);
+               lowerArm = new Victor(2);
+              upperArm = new Victor(3);
 
                // setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
                // setCoast(fRight);
@@ -383,13 +383,29 @@ public class RobotTemplate extends IterativeRobot
     }
     public void updateLowerArm()
     {//state machine for the lower arm
-            lowerArm.set(deadzone(controller.getZ()));
-
+            //lowerArm.set(deadzone(controller.getZ()));
+        if(j1.getRawButton(2))
+        {
+            lowerArm.set(0.5);
+        }
+        else if(j2.getRawButton(2))
+        {
+            lowerArm.set(-0.5);
+        }
     }
 
     public void updateUpperArm()
     {
-        if(controller.getRawButton(6))
+
+         if(j1.getRawButton(3))
+        {
+            upperArm.set(0.5);
+        }
+        else if(j2.getRawButton(3))
+        {
+            upperArm.set(-0.5);
+        }
+       /* if(controller.getRawButton(6))
         {
             System.out.println("Upper arm: .5");
             upperArm.set(0.5);
@@ -404,8 +420,8 @@ public class RobotTemplate extends IterativeRobot
             
             upperArm.set(0.0);
             
-            }
-        }
+        }*/
+       }
     
     public void moveWhileTracking(int lineState, double speed)
     {
