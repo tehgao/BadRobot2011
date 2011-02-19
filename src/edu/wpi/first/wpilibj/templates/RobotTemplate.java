@@ -50,7 +50,7 @@ public class RobotTemplate extends IterativeRobot
     DigitalInput right;
     DriverStation ds;
     Compressor air;
-    Solenoid shifter;
+    Solenoid shifter;//shifts
 
     Solenoid Kraken;
 
