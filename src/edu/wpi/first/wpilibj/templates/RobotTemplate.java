@@ -54,7 +54,7 @@ public class RobotTemplate extends IterativeRobot
     Compressor air;
     Solenoid shifter;
 
-    Solenoid hand;
+    Solenoid Kraken;
 
     boolean forkLeft;
     boolean pauseAtBegin; //Will the robot pause at the beginning of autonomous before moving?
@@ -109,8 +109,8 @@ public class RobotTemplate extends IterativeRobot
                 shifter = new Solenoid(8,1);
                 shifter.set(false);
 
-                hand = new Solenoid(9,1); //Change Later!!!!!!!!!!!!!!!
-                hand.set(false);
+                Kraken = new Solenoid(9,1); //Change Later!!!!!!!!!!!!!!!
+                Kraken.set(false);
 
                 ds = DriverStation.getInstance();
                 hasHangedTube = false;
@@ -231,9 +231,9 @@ public class RobotTemplate extends IterativeRobot
             //Here I'm guessing we'd have the hangTube() method
 
             hasHangedTube = true;
-            if (stopAfterHang) //If the robot is supposed to stay put after it hangs a tube
-                doneWithAuto = true;
-            return;
+            if (stopAfterHang) //If the robot is supposed to stay put after it hangs a tube*/
+                //doneWithAuto = true;
+            /*return;
         }*/
 
         if (pauseAtBegin && !hasAlreadyPaused) //If the robot should pause at the beginning and it hasn't already paused...
@@ -577,6 +577,8 @@ lcd.updateLCD();
                 break;
             default:
                 System.out.println("You're doomed. Run.");
+                break;
+        }
 
             switch(autoState)
             {
@@ -606,15 +608,27 @@ lcd.updateLCD();
                        {
                            lowerArm.set(-0.2);
                        }
-
+                        else
+                        autoState=3;
                     }
-                    autoState++;
-                
-                //Here is the new case structure
+                     else
+                        autoState = 3;
+                    break;
+                case 3:
+                    if (!closerThan(200))
+                        straight(0.5);
+                    else
+                        autoState = 4;
+                    break;
+                case 4:
+                    Kraken.set(true);//release the KRAKEN@!!!!!!!!!!! GO AWAY GAUTAM
+                    autoState = 5;
+                    break;
+                case 5:
+                    hasHangedTube = true;
+                    break;
 
         }
-
-    }
     }
 
 
