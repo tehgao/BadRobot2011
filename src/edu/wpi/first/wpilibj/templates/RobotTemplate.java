@@ -11,7 +11,6 @@ import edu.wpi.first.wpilibj.CANJaguar;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DigitalOutput;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.SimpleRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.camera.AxisCamera;
@@ -49,6 +48,7 @@ public class RobotTemplate extends IterativeRobot
     DigitalInput left; // for LineTracker
     DigitalInput middle;
     DigitalInput right;
+    DigitalInput upper1, upper2, lower1, lower2;
     DriverStation ds;
     Compressor air;
     Solenoid shifter;
@@ -85,6 +85,13 @@ public class RobotTemplate extends IterativeRobot
                 middle = new DigitalInput(2);
                 right = new DigitalInput(14);
 
+                //arm limit switches
+                upper1 = new DigitalInput();
+                upper2 = new DigitalInput();
+                lower1 = new DigitalInput();
+                lower2 = new DigitalInput();
+                DigitalInput armSwitches[] = {upper1, upper2, lower1, lower2};
+
                 output = new DigitalOutput(10); // ultrasonic output
                 input = new DigitalInput(8); //ultrasonic input
                 ultraSonic  = new Ultrasonic(output, input, Ultrasonic.Unit.kMillimeter); //initialize ultrasonic
@@ -111,6 +118,9 @@ public class RobotTemplate extends IterativeRobot
                 lowerArmRaised = false;
 
                 lcd = DriverStationLCD.getInstance();
+
+                CheckLimit updateLimitSwitches = new CheckLimit(armSwitches, lowerArm, upperArm);
+                updateLimitSwitches.run();
 
             } catch (Exception e) { e.printStackTrace(); }
         timer.delay(1);
@@ -382,8 +392,8 @@ public class RobotTemplate extends IterativeRobot
 
     }
     public void updateLowerArm()
-    {//state machine for the lower arm
-            //lowerArm.set(deadzone(controller.getZ()));
+    {
+        
         if(j1.getRawButton(2))
         {
             lowerArm.set(0.5);
