@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.AnalogChannel;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Victor;
+import edu.wpi.first.wpilibj.Encoder;
 /**
 * The VM is configured to automatically run this class, and to call the
 * functions corresponding to each mode, as described in the IterativeRobot
@@ -62,11 +63,21 @@ public class RobotTemplate extends IterativeRobot
     boolean hasHangedTube; // Has the robot hanged its ubertube (or at least attempted to)?
     boolean hasAlreadyPaused; //Has the robot already paused at the beginning? (Assuming that pauseAtBegin is true)
     boolean doneWithAuto; //Has the robot done what it needs to in auto mode?
-    AnalogChannel upperArmChannel; //Channel that controls the arm
-    AnalogChannel lowerArmChannel;
+    boolean usingFork; //Are we taking the forked path?
     DriverStationLCD lcd;
     boolean upperArmRaised;
     boolean lowerArmRaised;
+
+    DigitalInput upperLimitS = new DigitalInput(9);
+    DigitalInput lowerLimitS = new DigitalInput(10);
+    DigitalInput upperLimitE = new DigitalInput(11);
+    DigitalInput lowerLimitE = new DigitalInput(12);
+
+
+    Encoder upperArmEncoder;
+    Encoder lowerArmEncoder;
+
+    int autoState;
 
     public void robotInit()
     {
@@ -105,24 +116,15 @@ public class RobotTemplate extends IterativeRobot
                 hasHangedTube = false;
                 hasAlreadyPaused = false;
                 doneWithAuto = false;
+                autoState = 0;
+                //if this becomes autosatan, call a priest
                 updateDS();
 
-                upperArmChannel = new AnalogChannel(1014);
-                upperArmChannel.initAccumulator();
-
-                lowerArmChannel = new AnalogChannel(1014);
-                lowerArmChannel.initAccumulator();
 
                 upperArmRaised = false;
                 lowerArmRaised = false;
 
                 lcd = DriverStationLCD.getInstance();
-
-                upperArmChannel = new AnalogChannel(1014);
-                upperArmChannel.initAccumulator();
-
-                lowerArmChannel = new AnalogChannel(1014);
-                lowerArmChannel.initAccumulator();
 
                 upperArmRaised = false;
                 lowerArmRaised = false;
@@ -130,6 +132,12 @@ public class RobotTemplate extends IterativeRobot
                 lcd = DriverStationLCD.getInstance();
 
                 cam = AxisCamera.getInstance();
+
+                upperArmEncoder = new Encoder(1,1); //Needs channels
+                lowerArmEncoder = new Encoder(1,1);
+                upperArmEncoder.reset(); //"Zero out" the encoders
+                lowerArmEncoder.reset();
+
 
             } catch (Exception e) { e.printStackTrace(); }
         timer.delay(1);
@@ -145,12 +153,14 @@ public class RobotTemplate extends IterativeRobot
     {
 
 
-        try{
+        try
+        {
          setBreak(fLeft);
          setBreak(fRight);
          setBreak(bLeft);
          setBreak(bRight);
-         }catch (Exception e) {}
+         }
+         catch (Exception e) {}
          if (doneWithAuto)
          {
              return;
@@ -159,6 +169,7 @@ public class RobotTemplate extends IterativeRobot
          pauseAtBegin = ds.getDigitalIn(2);
          stopAfterHang = ds.getDigitalIn(3);
          turnAfterHang = !stopAfterHang && ds.getDigitalIn(4);//This will only be true if stopAfterHang is false
+         usingFork = ds.getDigitalIn(5);
          updateComp();
          updateDS();
          boolean leftValue = left.get();
@@ -213,7 +224,7 @@ public class RobotTemplate extends IterativeRobot
                 return;
          }
 
-         if(closerThan(1000))
+        /* if(closerThan(1000))
         {
             straight(0); //Stop
 
@@ -223,7 +234,7 @@ public class RobotTemplate extends IterativeRobot
             if (stopAfterHang) //If the robot is supposed to stay put after it hangs a tube
                 doneWithAuto = true;
             return;
-        }
+        }*/
 
         if (pauseAtBegin && !hasAlreadyPaused) //If the robot should pause at the beginning and it hasn't already paused...
         {
@@ -238,7 +249,8 @@ public class RobotTemplate extends IterativeRobot
 
             hasAlreadyPaused = true; //The robot has now paused
         }
-        moveWhileTracking(lineState, speed);
+
+        moveWhileTracking(lineState, speed, autoState);
 
     }
   
@@ -498,7 +510,7 @@ lcd.updateLCD();
         }*/
        }
     
-    public void moveWhileTracking(int lineState, double speed)
+    public void moveWhileTracking(int lineState, double speed, int autoState)
     {
       switch (lineState)
         {
@@ -565,39 +577,56 @@ lcd.updateLCD();
                 break;
             default:
                 System.out.println("You're doomed. Run.");
+
+            switch(autoState)
+            {
+                case 0:
+                    if (true) //uarm limit switch is not reached)
+                    {
+                        upperArm.set(0.5);
+                    }
+                    if (false) // larm limitt switch is not rezched
+                    {
+                        lowerArm.set(0.5);
+                    }
+                    if (upperLimitS.get() && upperLimitE.get())
+                        autoState = 1; // lowerArm and uarm are limit switch boolean
+                    break;
+                case 1:
+                    if(closerThan(1500))
+                    {
+                        straight(0);
+                        autoState = 2;
+                    }
+                    break;
+                case 2:
+                    if(usingFork)
+                    {
+                       if(countToDistS() > 1014)
+                       {
+                           lowerArm.set(-0.2);
+                       }
+
+                    }
+                    autoState++;
+                
+                //Here is the new case structure
+
         }
 
     }
+    }
 
-    public void raiseArm()
+
+    public int countToDistS()
     {
-        try
-        {
-        upperArm.set(.3);
-        if (upperArmChannel.getAccumulatorValue() > 1014) //Placeholder
-        {
-            upperArm.set(0);
-            upperArmRaised = true;
-        }
-        if (upperArmRaised)
-        {
-            lowerArm.set(.3);
-            if (lowerArmChannel.getAccumulatorValue() > 1014)
-            {
-                lowerArm.set(0);
-                lowerArmRaised = true;
+        return lowerArmEncoder.get();
+    }
 
-                while (!closerThan(300)) {setRights(0.2); setLefts(0.2);} // drive slowly to 30cm from wall
-                hand.set(true);
-                
-            }
-        }
-        }
-        catch (Exception e)
-        {
-            lcd.println(DriverStationLCD.Line.kMain6, 1, e.toString());
-
-        }
+     private double countToDistE()
+    {
+        return upperArmEncoder.get();
     }
 
 }
+
