@@ -129,6 +129,8 @@ public class RobotTemplate extends IterativeRobot
 
                 lcd = DriverStationLCD.getInstance();
 
+                cam = AxisCamera.getInstance();
+
             } catch (Exception e) { e.printStackTrace(); }
         timer.delay(1);
     }
