@@ -503,10 +503,13 @@ lcd.updateLCD();
             
         }*/
        }
-    
+    boolean run = true;
     public void moveWhileTracking(int lineState, double speed, int autoState)
     {
-      switch (lineState)
+
+        if(run)
+        {
+        switch (lineState)
         {
             case 0: //No sensors see the line
                 System.out.println("Lost the line: " + lastSense);
@@ -573,25 +576,31 @@ lcd.updateLCD();
                 System.out.println("You're doomed. Run.");
                 break;
         }
+        }
 
             switch(autoState)
             {
                 case 0:
-                    if (true) //uarm limit switch is not reached)
+                    if (!upperLimitS.get()) //uarm limit switch is not reached)
                     {
-                        upperArm.set(0.5);
+                        upperArm.set(0.3);
                     }
-                    if (false) // larm limitt switch is not rezched
+                    if (!upperLimitE.get()) // larm limitt switch is not rezched
                     {
-                        lowerArm.set(0.5);
+                        lowerArm.set(0.3);
                     }
                     if (upperLimitS.get() && upperLimitE.get())
+                    {
+                        lowerArm.set(0);
+                        upperArm.set(0);
                         autoState = 1; // lowerArm and uarm are limit switch boolean
+                    }
                     break;
                 case 1:
                     if(closerThan(1500))
                     {
                         straight(0);
+                        run = false;
                         autoState = 2;
                     }
                     break;
@@ -622,6 +631,7 @@ lcd.updateLCD();
                     hasHangedTube = true;
                     if (stopAfterHang)
                         doneWithAuto = true;
+                    run = true;
                     break;
 
         }
