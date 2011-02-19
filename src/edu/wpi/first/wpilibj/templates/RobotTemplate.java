@@ -52,7 +52,9 @@ public class RobotTemplate extends IterativeRobot
     DriverStation ds;
     Compressor air;
     Solenoid shifter;
+
     Solenoid hand;
+
     boolean forkLeft;
     boolean pauseAtBegin; //Will the robot pause at the beginning of autonomous before moving?
     boolean stopAfterHang; //Will the robot stop after it hangs a ubertube?
@@ -74,8 +76,8 @@ public class RobotTemplate extends IterativeRobot
                 fRight = new CANJaguar(4);
                 bLeft = new CANJaguar(9);
                 bRight = new CANJaguar(7);
-               lowerArm = new Victor(5);
-              upperArm = new Victor(8);
+                lowerArm = new Victor(2);
+                upperArm = new Victor(3);
 
                // setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
                // setCoast(fRight);
@@ -103,6 +105,18 @@ public class RobotTemplate extends IterativeRobot
                 hasHangedTube = false;
                 hasAlreadyPaused = false;
                 doneWithAuto = false;
+                updateDS();
+
+                upperArmChannel = new AnalogChannel(1014);
+                upperArmChannel.initAccumulator();
+
+                lowerArmChannel = new AnalogChannel(1014);
+                lowerArmChannel.initAccumulator();
+
+                upperArmRaised = false;
+                lowerArmRaised = false;
+
+                lcd = DriverStationLCD.getInstance();
 
                 upperArmChannel = new AnalogChannel(1014);
                 upperArmChannel.initAccumulator();
@@ -144,6 +158,7 @@ public class RobotTemplate extends IterativeRobot
          stopAfterHang = ds.getDigitalIn(3);
          turnAfterHang = !stopAfterHang && ds.getDigitalIn(4);//This will only be true if stopAfterHang is false
          updateComp();
+         updateDS();
          boolean leftValue = left.get();
          boolean middleValue = middle.get();
          boolean rightValue = right.get();
@@ -224,7 +239,7 @@ public class RobotTemplate extends IterativeRobot
         moveWhileTracking(lineState, speed);
 
     }
-
+  
     public void teleopPeriodic()
     {
         try{
@@ -237,6 +252,7 @@ public class RobotTemplate extends IterativeRobot
         }catch (Exception e) {}
         updateComp();
         updateGear();
+        updateDS();
 
 
         setLefts(deadzone(-j1.getY()));
@@ -252,7 +268,7 @@ public class RobotTemplate extends IterativeRobot
         fLeft.setX(d);
         bLeft.setX(d);
 
-        }
+        } 
         catch (CANTimeoutException e)
         {
             DriverStationLCD lcd = DriverStationLCD.getInstance();
@@ -268,6 +284,12 @@ public class RobotTemplate extends IterativeRobot
         ds.setDigitalOut(3, stopAfterHang);
         ds.setDigitalOut(4, turnAfterHang);
         ds.setDigitalOut(5, shifter.get());
+        System.out.println(ds.getDigitalOut(1));
+        ds.setDigitalOut(2, pauseAtBegin);
+        ds.setDigitalOut(3, stopAfterHang);
+        ds.setDigitalOut(4, turnAfterHang);
+        ds.setDigitalOut(5,  shifter.get());
+        System.out.println("Updated");
     }
 
     private void setRights(double d)
@@ -278,7 +300,7 @@ public class RobotTemplate extends IterativeRobot
         } catch (CANTimeoutException e){
             e.printStackTrace();
             DriverStationLCD lcd = DriverStationLCD.getInstance();
-            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN EXcEPTION!!!");
+            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN EXCEPTION!!!");
             lcd.updateLCD();
         }
     }
@@ -300,6 +322,7 @@ public class RobotTemplate extends IterativeRobot
     public void updateGear()
     {
         /** if(j1.getTrigger() || j2.getTrigger())
+<<<<<<< HEAD
 switchStateShift = true;
 else if(switchStateShift)
 {
@@ -330,7 +353,6 @@ switchStateShift = false;
         return d / Math.abs(d) * ((Math.abs(d) - .05) / .95);
     }
     //comment
-
 
     public void straight(double speed)
     {
@@ -432,6 +454,48 @@ lcd.updateLCD();
 //feedMe.feed();
 }
 */
+    public void updateLowerArm()
+    {//state machine for the lower arm
+            //lowerArm.set(deadzone(controller.getZ()));
+        if(j1.getRawButton(2))
+        {
+            lowerArm.set(0.5);
+        }
+        else if(j2.getRawButton(2))
+        {
+            lowerArm.set(-0.5);
+        }
+    }
+
+    public void updateUpperArm()
+    {
+
+         if(j1.getRawButton(3))
+        {
+            upperArm.set(0.5);
+        }
+        else if(j2.getRawButton(3))
+        {
+            upperArm.set(-0.5);
+        }
+       /* if(controller.getRawButton(6))
+        {
+            System.out.println("Upper arm: .5");
+            upperArm.set(0.5);
+        }
+        else if (controller.getRawButton(5))
+        {
+            System.out.println("Upper arm: -.5");
+            upperArm.set(-0.35);
+        }
+        else
+        {
+            
+            upperArm.set(0.0);
+            
+        }*/
+       }
+    
     public void moveWhileTracking(int lineState, double speed)
     {
       switch (lineState)
@@ -471,7 +535,6 @@ lcd.updateLCD();
                 softLeft(speed);
                 lastSense = 1;
                 break;
-
             case 5: //Left and right see the line
                 System.out.println("At Cross");
                 if(forkLeft)
