@@ -11,14 +11,12 @@ import edu.wpi.first.wpilibj.CANJaguar;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DigitalOutput;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.SimpleRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Ultrasonic;
 import edu.wpi.first.wpilibj.camera.AxisCamera;
 import edu.wpi.first.wpilibj.can.CANTimeoutException;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStationLCD;
-import edu.wpi.first.wpilibj.AnalogChannel;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Victor;
@@ -90,11 +88,6 @@ public class RobotTemplate extends IterativeRobot
                 lowerArm = new Victor(2);
                 upperArm = new Victor(3);
 
-               // setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
-               // setCoast(fRight);
-               // setCoast(bLeft);
-               // setCoast(bRight);
-
                 left = new DigitalInput(3); // for LineTracker
                 middle = new DigitalInput(2);
                 right = new DigitalInput(14);
@@ -117,7 +110,6 @@ public class RobotTemplate extends IterativeRobot
                 hasAlreadyPaused = false;
                 doneWithAuto = false;
                 autoState = 0;
-                //if this becomes autosatan, call a priest
                 updateDS();
 
 
@@ -137,30 +129,33 @@ public class RobotTemplate extends IterativeRobot
                 lowerArmEncoder = new Encoder(1,1);
                 upperArmEncoder.reset(); //"Zero out" the encoders
                 lowerArmEncoder.reset();
-
-
-            } catch (Exception e) { e.printStackTrace(); }
+            } 
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
         timer.delay(1);
     }
 
     /**
-* This function is called periodically during autonomous
-*/
+    * This function is called periodically during autonomous
+    */
 
     boolean atFork = false; // if robot has arrived at fork
     int lastSense = 0; // last LineTracker which saw line (1 for left, 2 for right)
     public void autonomousPeriodic()
     {
-
-
         try
         {
-         setBreak(fLeft);
-         setBreak(fRight);
-         setBreak(bLeft);
-         setBreak(bRight);
-         }
-         catch (Exception e) {}
+            setBreak(fLeft);
+            setBreak(fRight);
+            setBreak(bLeft);
+            setBreak(bRight);
+        }
+        catch (Exception e)
+        {
+
+        }
          if (doneWithAuto)
          {
              return;
@@ -175,7 +170,6 @@ public class RobotTemplate extends IterativeRobot
          boolean leftValue = left.get();
          boolean middleValue = middle.get();
          boolean rightValue = right.get();
-        //System.out.print("Autonomous Start");
         double speed = 0.3;
         int lineState = (int)(rightValue?1:0)+
                         (int)(middleValue?2:0)+
@@ -621,11 +615,13 @@ lcd.updateLCD();
                         autoState = 4;
                     break;
                 case 4:
-                    Kraken.set(true);//release the KRAKEN@!!!!!!!!!!! GO AWAY GAUTAM
+                    Kraken.set(true);
                     autoState = 5;
                     break;
                 case 5:
                     hasHangedTube = true;
+                    if (stopAfterHang)
+                        doneWithAuto = true;
                     break;
 
         }
