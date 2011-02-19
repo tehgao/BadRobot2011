@@ -48,6 +48,7 @@ public class RobotTemplate extends IterativeRobot
     DigitalInput left; // for LineTracker
     DigitalInput middle;
     DigitalInput right;
+    DigitalInput upper1, upper2, lower1, lower2;
     DriverStation ds;
     Compressor air;
     Solenoid shifter;//shifts
@@ -92,6 +93,13 @@ public class RobotTemplate extends IterativeRobot
                 middle = new DigitalInput(2);
                 right = new DigitalInput(14);
 
+                //arm limit switches
+                upper1 = new DigitalInput();
+                upper2 = new DigitalInput();
+                lower1 = new DigitalInput();
+                lower2 = new DigitalInput();
+                DigitalInput armSwitches[] = {upper1, upper2, lower1, lower2};
+
                 output = new DigitalOutput(10); // ultrasonic output
                 input = new DigitalInput(8); //ultrasonic input
                 ultraSonic = new Ultrasonic(output, input, Ultrasonic.Unit.kMillimeter); //initialize ultrasonic
@@ -123,6 +131,7 @@ public class RobotTemplate extends IterativeRobot
 
                 lcd = DriverStationLCD.getInstance();
 
+<<<<<<< HEAD
                 cam = AxisCamera.getInstance();
 
                 upperArmEncoder = new Encoder(1,1); //Needs channels
@@ -134,6 +143,12 @@ public class RobotTemplate extends IterativeRobot
             {
                 e.printStackTrace();
             }
+=======
+                CheckLimit updateLimitSwitches = new CheckLimit(armSwitches, lowerArm, upperArm);
+                updateLimitSwitches.run();
+
+            } catch (Exception e) { e.printStackTrace(); }
+>>>>>>> b3f35da14e5db44be2343bfcba17c152d92f2d94
         timer.delay(1);
     }
 
@@ -463,8 +478,8 @@ lcd.updateLCD();
 }
 */
     public void updateLowerArm()
-    {//state machine for the lower arm
-            //lowerArm.set(deadzone(controller.getZ()));
+    {
+        
         if(j1.getRawButton(2))
         {
             lowerArm.set(0.5);
