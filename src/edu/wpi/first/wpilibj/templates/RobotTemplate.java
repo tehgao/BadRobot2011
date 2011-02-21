@@ -35,9 +35,9 @@ public class RobotTemplate extends IterativeRobot
 * used for any initialization code.
 */
 
-    Joystick j1 = new Joystick(1);
-    Joystick j2 = new Joystick(2);
-    Joystick controller = new Joystick(3);
+    Joystick j1 = new Joystick(2);
+    Joystick j2 = new Joystick(3);
+    Joystick controller = new Joystick(1);
     CANJaguar fLeft, fRight, bLeft, bRight; //lowerArm, upperArm; //motors
     Victor Elbow, Sholder;
     DigitalOutput output; // for ultrasonic
@@ -47,11 +47,12 @@ public class RobotTemplate extends IterativeRobot
     Timer timer = new Timer(); // timer
     DigitalInput left; // for LineTracker
     DigitalInput middle;
-    DigitalInput right;
+    DigitalInput right , left2, middle2, right2;
     DigitalInput upper1, upper2, lower1, lower2;
     DriverStation ds;
     Compressor air;
     Solenoid shifter;//shifts
+
 
     Solenoid Kraken;
 
@@ -80,10 +81,10 @@ public class RobotTemplate extends IterativeRobot
             try
             {
 
-                upperLimitS = new DigitalInput(9);
-                lowerLimitS = new DigitalInput(10);
-                upperLimitE = new DigitalInput(11);
-                lowerLimitE = new DigitalInput(12);
+                upperLimitS = new DigitalInput(10);
+                lowerLimitS = new DigitalInput(11);
+                upperLimitE = new DigitalInput(12);
+                lowerLimitE = new DigitalInput(13);
 
                 fLeft = new CANJaguar(10); // motors for wheels with CAN ports as arguements
                 fRight = new CANJaguar(4);
@@ -95,6 +96,9 @@ public class RobotTemplate extends IterativeRobot
                 left = new DigitalInput(8); // for LineTracker
                 middle = new DigitalInput(6);
                 right = new DigitalInput(4);
+                //left2 = new DigitalInput(9); // for LineTracker
+                //middle2 = new DigitalInput(7);
+                //right2 = new DigitalInput(5);
 
                 output = new DigitalOutput(2); // ultrasonic output
                 input = new DigitalInput(3); //ultrasonic input
@@ -106,8 +110,8 @@ public class RobotTemplate extends IterativeRobot
                 shifter = new Solenoid(8,1);
                 shifter.set(false);
 
-                //Kraken = new Solenoid(9,1); //Change Later!!!!!!!!!!!!!!!
-                //Kraken.set(false);
+                Kraken = new Solenoid(8,2); //Change Later!!!!!!!!!!!!!!!
+               Kraken.set(false);
 
                 ds = DriverStation.getInstance();
                 hasHangedTube = false;
@@ -150,6 +154,8 @@ public class RobotTemplate extends IterativeRobot
     int lastSense = 0; // last LineTracker which saw line (1 for left, 2 for right)
     public void autonomousPeriodic()
     {
+
+        shifter.set(true);
         try
         {
             setBreak(fLeft);
@@ -175,10 +181,14 @@ public class RobotTemplate extends IterativeRobot
          boolean leftValue = left.get();
          boolean middleValue = middle.get();
          boolean rightValue = right.get();
+         //boolean leftValue2 = left2.get();
+         //boolean middleValue2 = middle2.get();
+         //boolean rightValue2 = right2.get();
         double speed = 0.3;
-        int lineState = (int)(rightValue?1:0)+
-                        (int)(middleValue?2:0)+
-                        (int)(leftValue?4:0);
+       // System.out.println(rightValue + " " + middleValue + " " + leftValue);
+        int lineState = (int)(rightValue?0:1)+
+                        (int)(middleValue?0:2)+
+                        (int)(leftValue?0:4);
 
         if (hasHangedTube && !turnAfterHang) //If the robot has hanged the tube, and then should back straight up...
             {
@@ -222,23 +232,54 @@ public class RobotTemplate extends IterativeRobot
                 doneWithAuto = true;
                 return;
          }
+        else if (!hasHangedTube)
+        {
+             moveWhileTracking(lineState, speed, autoState);
+        }
 
-        /* if(closerThan(1000))
+
+        System.out.println(ultraSonic.getRangeMM());
+
+        if(closerThan(533))
         {
             straight(0); //Stop
 
             //Here I'm guessing we'd have the hangTube() method
 
+            Kraken.set(false);
+           try
+                {
+                    Thread.sleep(500); //And after two seconds...
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+
+            straight(-.6);
+
+             try
+                {
+                    Thread.sleep(2000); //And after two seconds...
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+
+            straight(0);
+
             hasHangedTube = true;
             if (stopAfterHang) //If the robot is supposed to stay put after it hangs a tube*/
-                //doneWithAuto = true;
-            /*return;
-        }*/
+                doneWithAuto = true;
+            return;
+        }
 
         if (pauseAtBegin && !hasAlreadyPaused) //If the robot should pause at the beginning and it hasn't already paused...
         {
             try
             {
+                straight(0);
                 Thread.sleep(3000); //Pause for 3 seconds
             }
             catch (Exception e)
@@ -249,7 +290,7 @@ public class RobotTemplate extends IterativeRobot
             hasAlreadyPaused = true; //The robot has now paused
         }
 
-        moveWhileTracking(lineState, speed, autoState);
+       
 
     }
     boolean KrakenIsWaiting = false;
@@ -267,20 +308,23 @@ public class RobotTemplate extends IterativeRobot
         updateGear();
         updateDS();
 
-        if(controller.getRawButton(1))
+        if(controller.getRawButton(6))
         {
             KrakenIsWaiting = true;
         }
-        else
+        else if(KrakenIsWaiting)
         {
             changeKraken();
             KrakenIsWaiting = false;
         }
-        breaking();
-        setLefts(deadzone(-j1.getY()));
-        setRights(deadzone(-j2.getY()));
         updateLowerArm();
         updateUpperArm();
+        
+        if(!breaking())
+        {
+         setLefts(deadzone(-j1.getY()));
+         setRights(deadzone(-j2.getY()));
+        }
     }
 
     private void setLefts(double d)
@@ -360,12 +404,19 @@ public class RobotTemplate extends IterativeRobot
 
     public double deadzone(double d)
     {//deadzone for input devices
-        if (Math.abs(d) < .05) {
+        if (Math.abs(d) < .30) {
             return 0;
         }
-        return d / Math.abs(d) * ((Math.abs(d) - .05) / .95);
+        return d / Math.abs(d) * ((Math.abs(d) - .3) / .7);
     }
     //comment
+     public double tinyDeadzone(double d)
+    {//deadzone for input devices
+        if (Math.abs(d) < .15) {
+            return 0;
+        }
+        return d / Math.abs(d) * ((Math.abs(d) - .15) / .85);
+    }
 
     public void straight(double speed)
     {
@@ -415,67 +466,16 @@ public class RobotTemplate extends IterativeRobot
         return false;
 
     }
-   /* public void updateLowerArm()
-{//state machine for the lower arm
-try{
-lowerArm.setX(deadzone(controller.getZ()));
-} catch (CANTimeoutException e){
-DriverStationLCD lcd = DriverStationLCD.getInstance();
-lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
-lcd.updateLCD();
-}
-
-}
-
-public void updateUpperArm()
-{
-if(controller.getRawButton(6))
-{
-System.out.println("Upper arm: .5");
-try{
-upperArm.setX(0.5);
-} catch (CANTimeoutException e){
-DriverStationLCD lcd = DriverStationLCD.getInstance();
-lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
-lcd.updateLCD();
-}
-}
-else if (controller.getRawButton(5))
-{
-System.out.println("Upper arm: -.5");
-try
-{
-upperArm.setX(-0.35);
-}
-catch (CANTimeoutException e)
-{
-DriverStationLCD lcd = DriverStationLCD.getInstance();
-lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
-lcd.updateLCD();
-}
-}
-else
-{
-try{
-upperArm.setX(0.0);
-} catch (CANTimeoutException e){
-DriverStationLCD lcd = DriverStationLCD.getInstance();
-lcd.println(DriverStationLCD.Line.kMain6, 1, "Arm is failing");
-lcd.updateLCD();
-}
-}
-//feedMe.feed();
-}
-*/
+  
     public void updateLowerArm()
     {
-          Sholder.set(deadzone(controller.getRawAxis(4)));
+          Sholder.set(tinyDeadzone(-controller.getY()));
     }
 
     public void updateUpperArm()
     {
        
-        Elbow.set(deadzone(controller.getRawAxis(2)));
+        Elbow.set(-tinyDeadzone(controller.getRawAxis(5)));
 
     }
     boolean run = true;
@@ -485,6 +485,8 @@ lcd.updateLCD();
         Kraken.set(!Kraken.get());
     }
 
+
+    int waitFor = 0;
     public void moveWhileTracking(int lineState, double speed, int autoState)
     {
 
@@ -492,10 +494,19 @@ lcd.updateLCD();
         {
         switch (lineState)
         {
+
             case 0: //No sensors see the line
                 System.out.println("Lost the line: " + lastSense);
-                speed = .25;
-                 if (lastSense == 1) // left is last seen, go left
+                speed = .4;
+                if(waitFor == 1)
+                {
+                    hardLeft(speed);
+                }
+                else if(waitFor == 2)
+                {
+                    hardLeft(speed);
+                }
+                else if (lastSense == 1) // left is last seen, go left
                 {
                     setLefts(-speed);//speed * 0.7);
                     setRights(speed);
@@ -509,6 +520,7 @@ lcd.updateLCD();
                 {
                     setLefts(0.2); // CAUTION! Go Slowly!
                     setRights(0.2);
+                    System.out.println("Panic!");
                 }
                 break;
             case 1: //Right sees the line
@@ -532,10 +544,12 @@ lcd.updateLCD();
                 if(forkLeft)
                 {
                     hardLeft(speed);
+                    waitFor = 1;
                 }
                 else
                 {
                     hardRight(speed);
+                    waitFor = 2;
                 }
                 break;
             case 6: //Left and middle see the line
@@ -558,7 +572,7 @@ lcd.updateLCD();
                 break;
         }
         }
-
+/*
             switch(autoState)
             {
                 case 0:
@@ -618,10 +632,10 @@ lcd.updateLCD();
                     run = true;
                     break;
 
-        }
+        }*/
     }
 
-    public void breaking()
+    public boolean breaking()
     {
         if(j1.getRawButton(3) || j2.getRawButton(3))
         {
@@ -635,10 +649,26 @@ lcd.updateLCD();
 DriverStationLCD lcd = DriverStationLCD.getInstance();
 lcd.println(DriverStationLCD.Line.kMain6, 1, "Breaking failed");
 lcd.updateLCD();
+            return false;
         }
         }
-        else
+        else if (j1.getRawButton(2) || j2.getRawButton(2))
         {
+             try{
+           setBreak(fLeft);
+           setBreak(bLeft);
+           setBreak(fRight);
+           setBreak(bRight);
+          
+           }catch(CANTimeoutException e){
+DriverStationLCD lcd = DriverStationLCD.getInstance();
+lcd.println(DriverStationLCD.Line.kMain6, 1, "Breaking failed");
+lcd.updateLCD();}
+
+             straight(0);
+             return true;
+        }
+        else {
             try{
            setCoast(fLeft);
            setCoast(bLeft);
@@ -651,6 +681,12 @@ lcd.println(DriverStationLCD.Line.kMain6, 1, "Breaking failed");
 lcd.updateLCD();
         }
         }
+        return false;
+    }
+
+    public void hardBreak()
+    {
+
     }
 
     public int countToDistS()
@@ -658,7 +694,7 @@ lcd.updateLCD();
         return 0; //lowerArmEncoder.get();
     }
 
-     private double countToDistE()
+    private double countToDistE()
     {
         return 0;//upperArmEncoder.get();
     }
