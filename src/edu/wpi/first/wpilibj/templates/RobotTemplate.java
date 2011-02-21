@@ -37,6 +37,8 @@ public class RobotTemplate extends IterativeRobot
 
     Joystick j1 = new Joystick(1);
     Joystick j2 = new Joystick(2);
+    Joystick j3 = new Joystick(3);
+    Joystick j4 = new Joystick(4);
     Joystick controller = new Joystick(3);
     CANJaguar fLeft, fRight, bLeft, bRight; //lowerArm, upperArm; //motors
     Victor Elbow, Sholder;
@@ -467,13 +469,20 @@ lcd.updateLCD();
 */
     public void updateLowerArm()
     {
-           // Sholder.set(deadzone(j1.getY()));
+          // Sholder.set(deadzone(j4.getY()));
     }
 
     public void updateUpperArm()
     {
-
-        // Elbow.set(deadzone(j2.getY()));
+        System.out.println("X:" + j3.getX());
+        System.out.println("Y:" + j3.getX());
+        System.out.println("Z:" + j3.getX());
+        System.out.println("Trigger:" + j3.getTrigger());
+        System.out.println("Bump:" + j3.getBumper());
+        System.out.println("Twist" + j3.getTwist());
+        System.out.println("Raw1:" + j3.getRawAxis(1));
+        System.out.println("Throttle:" + j3.getThrottle());
+        //Elbow.set(deadzone(j3.getY()));
        /* if(controller.getRawButton(6))
         {
             System.out.println("Upper arm: .5");
