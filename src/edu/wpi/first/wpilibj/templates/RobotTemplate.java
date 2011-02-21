@@ -252,7 +252,7 @@ public class RobotTemplate extends IterativeRobot
         moveWhileTracking(lineState, speed, autoState);
 
     }
-  
+    boolean KrakenIsWaiting = false;
     public void teleopPeriodic()
     {
         try{
@@ -267,6 +267,15 @@ public class RobotTemplate extends IterativeRobot
         updateGear();
         updateDS();
 
+        if(controller.getRawButton(1))
+        {
+            KrakenIsWaiting = true;
+        }
+        else
+        {
+            changeKraken();
+            KrakenIsWaiting = false;
+        }
         breaking();
         setLefts(deadzone(-j1.getY()));
         setRights(deadzone(-j2.getY()));
@@ -467,24 +476,15 @@ lcd.updateLCD();
     {
        
         Elbow.set(deadzone(controller.getRawAxis(2)));
-       /* if(controller.getRawButton(6))
-        {
-            System.out.println("Upper arm: .5");
-            upperArm.set(0.5);
-        }
-        else if (controller.getRawButton(5))
-        {
-            System.out.println("Upper arm: -.5");
-            upperArm.set(-0.35);
-        }
-        else
-        {
-            
-            upperArm.set(0.0);
-            
-        }*/
-       }
+
+    }
     boolean run = true;
+
+    public void changeKraken()
+    {
+        Kraken.set(!Kraken.get());
+    }
+
     public void moveWhileTracking(int lineState, double speed, int autoState)
     {
 
