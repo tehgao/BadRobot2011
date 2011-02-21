@@ -37,8 +37,6 @@ public class RobotTemplate extends IterativeRobot
 
     Joystick j1 = new Joystick(1);
     Joystick j2 = new Joystick(2);
-    Joystick j3 = new Joystick(3);
-    Joystick j4 = new Joystick(4);
     Joystick controller = new Joystick(3);
     CANJaguar fLeft, fRight, bLeft, bRight; //lowerArm, upperArm; //motors
     Victor Elbow, Sholder;
@@ -269,7 +267,7 @@ public class RobotTemplate extends IterativeRobot
         updateGear();
         updateDS();
 
-
+        breaking();
         setLefts(deadzone(-j1.getY()));
         setRights(deadzone(-j2.getY()));
         updateLowerArm();
@@ -334,14 +332,7 @@ public class RobotTemplate extends IterativeRobot
     boolean switchStateShift = false;
     public void updateGear()
     {
-        /** if(j1.getTrigger() || j2.getTrigger())
-<<<<<<< HEAD
-switchStateShift = true;
-else if(switchStateShift)
-{
-shifter.set(!shifter.get());
-switchStateShift = false;
-}**/
+       
         if(j1.getTrigger())
         {
             shifter.set(true);
@@ -469,20 +460,13 @@ lcd.updateLCD();
 */
     public void updateLowerArm()
     {
-          // Sholder.set(deadzone(j4.getY()));
+          Sholder.set(deadzone(controller.getRawAxis(4)));
     }
 
     public void updateUpperArm()
     {
-        System.out.println("X:" + j3.getX());
-        System.out.println("Y:" + j3.getX());
-        System.out.println("Z:" + j3.getX());
-        System.out.println("Trigger:" + j3.getTrigger());
-        System.out.println("Bump:" + j3.getBumper());
-        System.out.println("Twist" + j3.getTwist());
-        System.out.println("Raw1:" + j3.getRawAxis(1));
-        System.out.println("Throttle:" + j3.getThrottle());
-        //Elbow.set(deadzone(j3.getY()));
+       
+        Elbow.set(deadzone(controller.getRawAxis(2)));
        /* if(controller.getRawButton(6))
         {
             System.out.println("Upper arm: .5");
@@ -637,6 +621,37 @@ lcd.updateLCD();
         }
     }
 
+    public void breaking()
+    {
+        if(j1.getRawButton(3) || j2.getRawButton(3))
+        {
+           try{
+           setBreak(fLeft);
+           setBreak(bLeft);
+           setBreak(fRight);
+           setBreak(bRight);
+           
+           }catch(CANTimeoutException e){
+DriverStationLCD lcd = DriverStationLCD.getInstance();
+lcd.println(DriverStationLCD.Line.kMain6, 1, "Breaking failed");
+lcd.updateLCD();
+        }
+        }
+        else
+        {
+            try{
+           setCoast(fLeft);
+           setCoast(bLeft);
+           setCoast(fRight);
+           setCoast(bRight);
+
+           }catch(CANTimeoutException e){
+DriverStationLCD lcd = DriverStationLCD.getInstance();
+lcd.println(DriverStationLCD.Line.kMain6, 1, "Breaking failed");
+lcd.updateLCD();
+        }
+        }
+    }
 
     public int countToDistS()
     {
