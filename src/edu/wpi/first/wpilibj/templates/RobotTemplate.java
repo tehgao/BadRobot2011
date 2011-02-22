@@ -240,13 +240,13 @@ public class RobotTemplate extends IterativeRobot
 
         System.out.println(ultraSonic.getRangeMM());
 
-        if(closerThan(533))
+        if(closerThan(665))
         {
             straight(0); //Stop
 
             //Here I'm guessing we'd have the hangTube() method
 
-            Kraken.set(false);
+            Kraken.set(true);
            try
                 {
                     Thread.sleep(500); //And after two seconds...
@@ -296,6 +296,8 @@ public class RobotTemplate extends IterativeRobot
     boolean KrakenIsWaiting = false;
     public void teleopPeriodic()
     {
+
+         System.out.println(ultraSonic.getRangeMM());
         try{
         setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
         setCoast(fRight);
