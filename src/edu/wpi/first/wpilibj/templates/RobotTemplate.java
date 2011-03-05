@@ -54,7 +54,7 @@ public class RobotTemplate extends IterativeRobot
     Solenoid shifter;//shifts
 
 
-    Solenoid Kraken;
+    Solenoid Kraken, break1, break2, minibot;
 
     boolean forkLeft = false;
     boolean pauseAtBegin = false; //Will the robot pause at the beginning of autonomous before moving?
@@ -110,9 +110,12 @@ public class RobotTemplate extends IterativeRobot
                 shifter = new Solenoid(8,1);
                 shifter.set(false);
 
-                Kraken = new Solenoid(8,2); //Change Later!!!!!!!!!!!!!!!
-               Kraken.set(false);
-
+                Kraken = new Solenoid(8,2);
+                Kraken.set(false);
+                break1 = new Solenoid(8,3);
+                break2 = new Solenoid(8,4);
+                minibot = new Solenoid(8,5);
+                minibot.set(true);
                 ds = DriverStation.getInstance();
                 hasHangedTube = false;
                 hasAlreadyPaused = false;
@@ -184,6 +187,10 @@ public class RobotTemplate extends IterativeRobot
          //boolean leftValue2 = left2.get();
          //boolean middleValue2 = middle2.get();
          //boolean rightValue2 = right2.get();
+         int height = (int)(ds.getDigitalIn(5)?0:1)+
+                        (int)(ds.getDigitalIn(6)?0:2)+
+                        (int)(ds.getDigitalIn(7)?0:4)+
+                        (int)(ds.getDigitalIn(8)?0:8);
         double speed = 0.3;
        // System.out.println(rightValue + " " + middleValue + " " + leftValue);
         int lineState = (int)(rightValue?0:1)+
@@ -243,35 +250,7 @@ public class RobotTemplate extends IterativeRobot
         if(closerThan(665))
         {
             straight(0); //Stop
-
-            //Here I'm guessing we'd have the hangTube() method
-
-            Kraken.set(true);
-           try
-                {
-                    Thread.sleep(500); //And after two seconds...
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-
-            straight(-.6);
-
-             try
-                {
-                    Thread.sleep(2000); //And after two seconds...
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
-
-            straight(0);
-
-            hasHangedTube = true;
-            if (stopAfterHang) //If the robot is supposed to stay put after it hangs a tube*/
-                doneWithAuto = true;
+            hangTube(height);
             return;
         }
 
@@ -321,6 +300,9 @@ public class RobotTemplate extends IterativeRobot
         }
         updateLowerArm();
         updateUpperArm();
+
+        if(j2.getRawButton(10) && controller.getRawButton(2) && controller.getRawButton(8))
+            minibot.set(false);
         
         if(!breaking())
         {
@@ -471,12 +453,15 @@ public class RobotTemplate extends IterativeRobot
   
     public void updateLowerArm()
     {
-          Sholder.set(tinyDeadzone(-controller.getY()));
+        if(tinyDeadzone(-controller.getY()) == 0)
+                break1.set(true);
+        Sholder.set(tinyDeadzone(-controller.getY()));
     }
 
     public void updateUpperArm()
     {
-       
+       if(tinyDeadzone(-controller.getRawAxis(5)) == 0)
+                break2.set(true);
         Elbow.set(-tinyDeadzone(controller.getRawAxis(5)));
 
     }
@@ -574,67 +559,6 @@ public class RobotTemplate extends IterativeRobot
                 break;
         }
         }
-/*
-            switch(autoState)
-            {
-                case 0:
-                    if (!upperLimitS.get()) //uarm limit switch is not reached)
-                    {
-                        Elbow.set(0.3);
-                    }
-                    if (!upperLimitE.get()) // larm limitt switch is not rezched
-                    {
-                        Sholder.set(0.3);
-                    }
-                    if (upperLimitS.get() && upperLimitE.get())
-                    {
-                        Sholder.set(0);
-                        Elbow.set(0);
-                        autoState = 1; // lowerArm and uarm are limit switch boolean
-                    }
-                    break;
-                case 1:
-                    if(closerThan(1500))
-                    {
-                        straight(0);
-                        run = false;
-                        autoState = 2;
-                    }
-                    break;
-                case 2:
-                    if(usingFork)
-                    {
-                       if(countToDistS() > 1014)
-                       {
-                           Sholder.set(-0.2);
-                       }
-                        else
-                        {
-                            Sholder.set(0);
-                            autoState=3;
-                        }
-                    }
-                     else
-                        autoState = 3;
-                    break;
-                case 3:
-                    if (!closerThan(200))
-                        straight(0.5);
-                    else
-                        autoState = 4;
-                    break;
-                case 4:
-                    Kraken.set(true);
-                    autoState = 5;
-                    break;
-                case 5:
-                    hasHangedTube = true;
-                    if (stopAfterHang)
-                        doneWithAuto = true;
-                    run = true;
-                    break;
-
-        }*/
     }
 
     public boolean breaking()
@@ -689,6 +613,55 @@ lcd.updateLCD();
     public void hardBreak()
     {
 
+    }
+
+    public void hangTube(int height)
+    {
+        switch(height){
+                default:
+                        Kraken.set(true);
+                        try
+                        {
+                            Thread.sleep(500); //And after two seconds...
+                        }
+                        catch (Exception e)
+                        {
+                            e.printStackTrace();
+                        }
+                        straight(-.6);
+
+                        try
+                        {
+                            Thread.sleep(2000); //And after two seconds...
+                        }
+                        catch (Exception e)
+                        {
+                            e.printStackTrace();
+                        }
+
+                        straight(0);
+
+                        hasHangedTube = true;
+                        if (stopAfterHang) //If the robot is supposed to stay put after it hangs a tube*/
+                            doneWithAuto = true;
+                        break;
+                case 5:
+                    //low middle
+                    break;
+                case 9:
+                    //low high
+                    break;
+                case 2:
+                    //high low
+                    break;
+                case 4:
+                    //high middle
+                    break;
+                case 8:
+                    //high high
+                    break;
+
+                }
     }
 
     public int countToDistS()
