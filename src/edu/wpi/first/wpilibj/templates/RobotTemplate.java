@@ -197,6 +197,20 @@ public class RobotTemplate extends IterativeRobot
                         (int)(middleValue?0:2)+
                         (int)(leftValue?0:4);
 
+        if (ds.getAnalogIn(1) > 0)
+        {
+            //dead reckoning
+            straight(speed);
+            if(closerThan(665))
+            {
+                straight(0); //Stop
+                hangTube(height);
+                return;
+       }
+
+
+        }
+
         if (hasHangedTube && !turnAfterHang) //If the robot has hanged the tube, and then should back straight up...
             {
                 straight(-speed); // Back straight up
@@ -245,7 +259,7 @@ public class RobotTemplate extends IterativeRobot
         }
 
 
-        System.out.println(ultraSonic.getRangeMM());
+        //System.out.println(ultraSonic.getRangeMM());
 
         if(closerThan(665))
         {
@@ -642,23 +656,28 @@ lcd.updateLCD();
                         straight(0);
 
                         hasHangedTube = true;
-                        if (stopAfterHang) //If the robot is supposed to stay put after it hangs a tube*/
+                        if (stopAfterHang) //If the robot is supposed to stay put after it hangs a tube
                             doneWithAuto = true;
                         break;
                 case 5:
                     //low middle
+                    //THERE NEEDS TO BE A LOOP HERE!!!
                     break;
                 case 9:
                     //low high
+                     //THERE NEEDS TO BE A LOOP HERE!!!
                     break;
                 case 2:
                     //high low
+                     //THERE NEEDS TO BE A LOOP HERE!!!
                     break;
                 case 4:
                     //high middle
+                     //THERE NEEDS TO BE A LOOP HERE!!!
                     break;
                 case 8:
                     //high high
+                     //THERE NEEDS TO BE A LOOP HERE!!!
                     break;
 
                 }
