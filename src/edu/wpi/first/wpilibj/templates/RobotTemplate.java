@@ -199,7 +199,10 @@ public class RobotTemplate extends IterativeRobot
                         (int)(leftValue?0:4);
 
         if(!armAtHeight)
-            setArmHeight(height);//raises arm for autonomous
+        {
+            setArmHeight(height);
+            armAtHeight = true;
+        }//raises arm for autonomous
 
         if (ds.getAnalogIn(1) > 0)
         {
