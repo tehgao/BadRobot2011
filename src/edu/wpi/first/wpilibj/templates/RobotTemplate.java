@@ -154,6 +154,7 @@ public class RobotTemplate extends IterativeRobot
     */
 
     boolean atFork = false; // if robot has arrived at fork
+    boolean armAtHeight = false;
     int lastSense = 0; // last LineTracker which saw line (1 for left, 2 for right)
     public void autonomousPeriodic()
     {
@@ -197,6 +198,9 @@ public class RobotTemplate extends IterativeRobot
                         (int)(middleValue?0:2)+
                         (int)(leftValue?0:4);
 
+        if(!armAtHeight)
+            setArmHeight(height);//raises arm for autonomous
+
         if (ds.getAnalogIn(1) > 0)
         {
             //dead reckoning
@@ -204,7 +208,7 @@ public class RobotTemplate extends IterativeRobot
             if(closerThan(665))
             {
                 straight(0); //Stop
-                hangTube(height);
+                hangTube();
                 return;
        }
 
@@ -264,7 +268,7 @@ public class RobotTemplate extends IterativeRobot
         if(closerThan(665))
         {
             straight(0); //Stop
-            hangTube(height);
+            hangTube();
             return;
         }
 
@@ -629,11 +633,10 @@ lcd.updateLCD();
 
     }
 
-    public void hangTube(int height)
+    public void hangTube()
     {
-        switch(height){
-                default:
-                        Kraken.set(true);
+
+         Kraken.set(true);
                         try
                         {
                             Thread.sleep(500); //And after two seconds...
@@ -656,8 +659,14 @@ lcd.updateLCD();
                         straight(0);
 
                         hasHangedTube = true;
-                        if (stopAfterHang) //If the robot is supposed to stay put after it hangs a tube
-                            doneWithAuto = true;
+
+     
+    }
+
+    public void setArmHeight(int height)
+    {
+          switch(height){
+                default:
                         break;
                 case 5:
                     //low middle
