@@ -52,9 +52,10 @@ public class RobotTemplate extends IterativeRobot
     DriverStation ds;
     Compressor air;
     Solenoid shifter;//shifts
+    Encoder LowerArmEncoder;
 
 
-    Solenoid Kraken, break1, break2, minibot;
+    Solenoid Kraken;
 
     boolean forkLeft = false;
     boolean pauseAtBegin = false; //Will the robot pause at the beginning of autonomous before moving?
@@ -69,6 +70,7 @@ public class RobotTemplate extends IterativeRobot
     boolean lowerArmRaised;
 
     DigitalInput upperLimitS, lowerLimitS, upperLimitE, lowerLimitE;
+    DigitalOutput break1, minibot;
 
 
     Encoder upperArmEncoder;
@@ -100,6 +102,8 @@ public class RobotTemplate extends IterativeRobot
                 //middle2 = new DigitalInput(7);
                 //right2 = new DigitalInput(5);
 
+                lowerArmEncoder = new Encoder(10,11);//These arguments may be inversed
+
                 output = new DigitalOutput(2); // ultrasonic output
                 input = new DigitalInput(3); //ultrasonic input
                 ultraSonic = new Ultrasonic(output, input, Ultrasonic.Unit.kMillimeter); //initialize ultrasonic
@@ -112,9 +116,9 @@ public class RobotTemplate extends IterativeRobot
 
                 Kraken = new Solenoid(8,2);
                 Kraken.set(false);
-                break1 = new Solenoid(8,3);
-                break2 = new Solenoid(8,4);
-                minibot = new Solenoid(8,5);
+                break1 = new DigitalOutput(2);
+
+                minibot = new DigitalOutput(3);
                 minibot.set(true);
                 ds = DriverStation.getInstance();
                 hasHangedTube = false;
@@ -481,8 +485,6 @@ public class RobotTemplate extends IterativeRobot
 
     public void updateUpperArm()
     {
-       if(tinyDeadzone(-controller.getRawAxis(5)) == 0)
-                break2.set(true);
         Elbow.set(-tinyDeadzone(controller.getRawAxis(5)));
 
     }
@@ -668,30 +670,86 @@ lcd.updateLCD();
 
     public void setArmHeight(int height)
     {
+        boolean lowerArmRaised = false;
+        boolean upperArmRaised = false;
+        int DoNotUse = 0;
           switch(height){
                 default:
                         break;
                 case 5:
-                    //low middle
-                    //THERE NEEDS TO BE A LOOP HERE!!!
+                    break1.set(false);
+                    while(LowerArmEncoder.get() < DoNotUse)//low Middle
+                    {
+                        Sholder.set(.8);
+                    }
+                    break1.set(true);
+                    while(!upperArmRaised)
+                    {
+                        //timer here if needed
+                        upperArmRaised = true;
+
+                    }
                     break;
                 case 9:
                     //low high
-                     //THERE NEEDS TO BE A LOOP HERE!!!
+                    break1.set(false);
+                    while(LowerArmEncoder.get() < DoNotUse)
+                    {
+                        Sholder.set(.8);
+                    }
+                    break1.set(true);
+                    while(!upperArmRaised)
+                    {
+                        //timer here if needed
+                        upperArmRaised = true;
+
+                    }
                     break;
                 case 2:
                     //high low
-                     //THERE NEEDS TO BE A LOOP HERE!!!
+                    break1.set(false);
+                    while(LowerArmEncoder.get() < DoNotUse)
+                    {
+                        Sholder.set(.8);
+                    }
+                    break1.set(true);
+                    while(!upperArmRaised)
+                    {
+                        //timer here if needed
+                        upperArmRaised = true;
+
+                    }
                     break;
                 case 4:
                     //high middle
-                     //THERE NEEDS TO BE A LOOP HERE!!!
+                    break1.set(false);
+                    while(LowerArmEncoder.get() < DoNotUse)
+                    {
+                        Sholder.set(.8);
+                    }
+                    break1.set(true);
+                    while(!upperArmRaised)
+                    {
+                        //timer here if needed
+                        upperArmRaised = true;
+
+                    }
                     break;
                 case 8:
                     //high high
-                     //THERE NEEDS TO BE A LOOP HERE!!!
-                    break;
+                    break1.set(false);
+                    while(LowerArmEncoder.get() < DoNotUse)
+                    {
+                        Sholder.set(.8);
+                    }
+                    break1.set(true);
+                    while(!upperArmRaised)
+                    {
+                        //timer here if needed
+                        upperArmRaised = true;
 
+                    }
+                    break;
                 }
     }
 
