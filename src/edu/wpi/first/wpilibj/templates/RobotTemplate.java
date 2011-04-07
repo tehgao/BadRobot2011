@@ -417,10 +417,10 @@ public class RobotTemplate extends IterativeRobot
     //comment
      public double tinyDeadzone(double d)
     {//deadzone for input devices
-        if (Math.abs(d) < .15) {
+        if (Math.abs(d) < .05) {
             return 0;
         }
-        return d / Math.abs(d) * ((Math.abs(d) - .15) / .85);
+        return d / Math.abs(d) * ((Math.abs(d) - .05) / .95);
     }
 
     public void straight(double speed)
