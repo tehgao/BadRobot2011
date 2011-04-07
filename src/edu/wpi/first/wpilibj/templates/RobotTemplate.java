@@ -43,7 +43,7 @@ public class RobotTemplate extends IterativeRobot
     DigitalOutput output; // for ultrasonic
     DigitalInput input;
     Ultrasonic ultraSonic;
-    AxisCamera cam; // camera
+    //AxisCamera cam; // camera
     Timer timer = new Timer(); // timer
     DigitalInput left; // for LineTracker
     DigitalInput middle;
@@ -138,7 +138,7 @@ public class RobotTemplate extends IterativeRobot
 
                 lcd = DriverStationLCD.getInstance();
 
-                cam = AxisCamera.getInstance();
+                //scam = AxisCamera.getInstance();
 
                 //upperArmEncoder = new Encoder(1,1); //Needs channels
                 //lowerArmEncoder = new Encoder(1,2);
