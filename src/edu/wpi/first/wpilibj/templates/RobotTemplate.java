@@ -264,7 +264,7 @@ public class RobotTemplate extends IterativeRobot
                 doneWithAuto = true;
                 return;
          }
-        else if (!hasHangedTube)
+        else if (!hasHangedTube && ds.getAnalogIn(1) == 0)
         {
              moveWhileTracking(lineState, speed, autoState);
         }
