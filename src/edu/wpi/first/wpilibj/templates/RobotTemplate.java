@@ -7,7 +7,8 @@
 
 package edu.wpi.first.wpilibj.templates;
 import edu.wpi.first.wpilibj.IterativeRobot;
-import edu.wpi.first.wpilibj.CANJaguar;
+//import edu.wpi.first.wpilibj.CANJaguar;'
+import edu.wpi.first.wpilibj.Jaguar;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DigitalOutput;
 import edu.wpi.first.wpilibj.Joystick;
@@ -39,7 +40,7 @@ public class RobotTemplate extends IterativeRobot
     Joystick j1 = new Joystick(3);
     Joystick j2 = new Joystick(1);
     Joystick controller = new Joystick(2);
-    CANJaguar fLeft, fRight, bLeft, bRight; //lowerArm, upperArm; //motors
+    Jaguar fLeft, fRight, bLeft, bRight; //lowerArm, upperArm; //motors
     Victor Elbow, Sholder;
     DigitalOutput output; // for ultrasonic
     DigitalInput input;
@@ -53,7 +54,7 @@ public class RobotTemplate extends IterativeRobot
     DriverStation ds;
     Compressor air;
     Solenoid shifter;//shifts
-    Encoder LowerArmEncoder;
+    Encoder lowerArmEncoder;
 
 
     Solenoid Kraken;
@@ -73,8 +74,6 @@ public class RobotTemplate extends IterativeRobot
     DigitalInput upperLimitS, lowerLimitS, upperLimitE, lowerLimitE;
     Relay minibot, breakOn, breakOff;
 
-    Encoder lowerArmEncoder;
-
     int autoState;
 
     public void robotInit()
@@ -90,10 +89,10 @@ public class RobotTemplate extends IterativeRobot
                 //upperLimitE = new DigitalInput(12);
                 //lowerLimitE = new DigitalInput(13);
 
-                fLeft = new CANJaguar(10); // motors for wheels with CAN ports as arguements
-                fRight = new CANJaguar(4);
-                bLeft = new CANJaguar(9);
-                bRight = new CANJaguar(7);
+                fLeft = new Jaguar(8); // motors for wheels with CAN ports as arguements
+                fRight = new Jaguar(6);
+                bLeft = new Jaguar(9);
+                bRight = new Jaguar(7);
                 Sholder = new Victor(3);
                 Elbow = new Victor(1);
 
@@ -104,7 +103,7 @@ public class RobotTemplate extends IterativeRobot
                 //middle2 = new DigitalInput(7);
                 //right2 = new DigitalInput(5);
 
-                //lowerArmEncoder = new Encoder(4,10,4,11);//These arguments may be inversed
+                lowerArmEncoder = new Encoder(4,11,4,10);//These arguments may be inversed
 
                 output = new DigitalOutput(2); // ultrasonic output
                 input = new DigitalInput(3); //ultrasonic input
@@ -304,7 +303,7 @@ public class RobotTemplate extends IterativeRobot
     public void teleopPeriodic()
     {
 
-
+        System.out.println(ultraSonic.getRangeMM());
        // System.out.println(lowerArmEncoder.get() + " counts");
         try{
         setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
@@ -330,7 +329,7 @@ public class RobotTemplate extends IterativeRobot
         updateLowerArm();
         updateUpperArm();
 
-       // if(j2.getRawButton(10) && controller.getRawButton(2) && controller.getRawButton(8))
+       // if(j2.getRawButton(10) && j1.getRawButton(10)))
             //minibot.set(Relay.Value.kOff);c
 
         if(!breaking())
@@ -344,14 +343,14 @@ public class RobotTemplate extends IterativeRobot
     {
         try
         {
-        fLeft.setX(d);
-        bLeft.setX(d);
+        fLeft.set(d);
+        bLeft.set(d);
 
         }
-        catch (CANTimeoutException e)
+        catch (Exception e)
         {
             DriverStationLCD lcd = DriverStationLCD.getInstance();
-            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN EXCEPTION");
+            lcd.println(DriverStationLCD.Line.kMain6, 1, "NOT A CAN EXCEPTION");
             lcd.updateLCD();
         }
     }
@@ -372,19 +371,19 @@ public class RobotTemplate extends IterativeRobot
     private void setRights(double d)
     {
         try{
-        fRight.setX(-d);
-        bRight.setX(-d);
-        } catch (CANTimeoutException e){
+        fRight.set(-d);
+        bRight.set(-d);
+        } catch (Exception e){
             e.printStackTrace();
             DriverStationLCD lcd = DriverStationLCD.getInstance();
-            lcd.println(DriverStationLCD.Line.kMain6, 1, "CAN EXCEPTION!!!");
+            lcd.println(DriverStationLCD.Line.kMain6, 1, "NOT A CAN EXCEPTION!!!");
             lcd.updateLCD();
         }
     }
 
-    public void setCoast(CANJaguar jag) throws CANTimeoutException
+    public void setCoast(Jaguar jag) throws CANTimeoutException
     {//Sets the drive motors to coast mode
-        try{jag.configNeutralMode(CANJaguar.NeutralMode.kCoast);} catch (Exception e) {e.printStackTrace();}
+       //; try{jag.configNeutralMode(Jaguar.NeutralMode.kCoast);} catch (Exception e) {e.printStackTrace();}
     }
 
     public void updateComp()
@@ -410,9 +409,9 @@ public class RobotTemplate extends IterativeRobot
 
     }
 
-     public void setBreak(CANJaguar jag) throws CANTimeoutException
+     public void setBreak(Jaguar jag) throws CANTimeoutException
     {//Sets the drive motors to brake mode
-        try{jag.configNeutralMode(CANJaguar.NeutralMode.kBrake);} catch (Exception e) {e.printStackTrace();}
+       // try{jag.configNeutralMode(CANJaguar.NeutralMode.kBrake);} catch (Exception e) {e.printStackTrace();}
     }
 
     public double deadzone(double d)
@@ -482,7 +481,7 @@ public class RobotTemplate extends IterativeRobot
 
     public void updateLowerArm()
     {
-        System.out.println(deadzone(-controller.getY()));
+        //System.out.println(deadzone(-controller.getY()));
         if(deadzone(-controller.getY()) == 0.0)
         {
             breakOn.set(Relay.Value.kOn);
@@ -496,7 +495,7 @@ public class RobotTemplate extends IterativeRobot
         //if(deadzone(controller.getY()) > 0) this may work now
          //   Sholder.set(0.5*deadzone(-controller.getY()));
        // else
-        System.out.println(deadzone(-controller.getY()));
+       // System.out.println(deadzone(-controller.getY()));
             Sholder.set(deadzone(-controller.getY()));
         
        // Elbow.set(deadzone(0.4*controller.getY()));
@@ -706,7 +705,7 @@ lcd.updateLCD();
                 case 5:
                     breakOff.set(Relay.Value.kOn);
                     breakOn.set(Relay.Value.kOff);
-                    while(LowerArmEncoder.get() < DoNotUse)//low Middle
+                    while(lowerArmEncoder.get() < DoNotUse)//low Middle
                     {
                         Sholder.set(-.8);
                     }
@@ -723,7 +722,7 @@ lcd.updateLCD();
                     //low high
                     breakOff.set(Relay.Value.kOn);
                     breakOn.set(Relay.Value.kOff);
-                    while(LowerArmEncoder.get() < DoNotUse)
+                    while(lowerArmEncoder.get() < DoNotUse)
                     {
                         Sholder.set(-.8);
                     }
@@ -755,7 +754,7 @@ lcd.updateLCD();
                     //high middle
                     breakOff.set(Relay.Value.kOn);
                     breakOn.set(Relay.Value.kOff);
-                    while(LowerArmEncoder.get() < DoNotUse)
+                    while(lowerArmEncoder.get() < DoNotUse)
                     {
                         Sholder.set(-.8);
                     }
@@ -772,7 +771,7 @@ lcd.updateLCD();
                     //high high
                     breakOff.set(Relay.Value.kOn);
                     breakOn.set(Relay.Value.kOff);
-                    while(LowerArmEncoder.get() < DoNotUse)
+                    while(lowerArmEncoder.get() < DoNotUse)
                     {
                         Sholder.set(-.8);
                     }
