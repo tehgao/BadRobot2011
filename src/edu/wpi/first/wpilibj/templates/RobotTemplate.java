@@ -138,7 +138,7 @@ public class RobotTemplate extends IterativeRobot
                 lowerArmRaised = false;
 
                 lcd = DriverStationLCD.getInstance();
-
+                lowerArmEncoder.start();
                 //scam = AxisCamera.getInstance();
 
                 //upperArmEncoder = new Encoder(1,1); //Needs channels
@@ -161,21 +161,11 @@ public class RobotTemplate extends IterativeRobot
     boolean atFork = false; // if robot has arrived at fork
     boolean armAtHeight = false;
     int lastSense = 0; // last LineTracker which saw line (1 for left, 2 for right)
+    int mmDistance = 0;
     public void autonomousPeriodic()
     {
 
         shifter.set(true);
-        try
-        {
-            setBreak(fLeft);
-            setBreak(fRight);
-            setBreak(bLeft);
-            setBreak(bRight);
-        }
-        catch (Exception e)
-        {
-
-        }
          if (doneWithAuto)
          {
              return;
@@ -282,7 +272,7 @@ public class RobotTemplate extends IterativeRobot
 
         //System.out.println(ultraSonic.getRangeMM());
 
-        if(closerThan(600))
+        if(closerThan(mmDistance))
         {
             straight(0); //Stop
             hangTube();
@@ -306,12 +296,11 @@ public class RobotTemplate extends IterativeRobot
 
     }
     boolean KrakenIsWaiting = false;
-
     public void teleopPeriodic()
     {
 
         //System.out.println(ultraSonic.getRangeMM());
-        System.out.println(lowerArmEncoder.get() + " counts");
+        System.out.println(lowerArmEncoder.get() + " counts" + (lowerArmEncoder == null));
         try{
         setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
         setCoast(fRight);
@@ -323,12 +312,13 @@ public class RobotTemplate extends IterativeRobot
 
         if(j1.getRawButton(7))
         {
-             Elbow.set(-0.5); // TO BE EXPERIMENTED
-                    try
-                    {
-                        Thread.sleep(200);
-                    } catch (Exception e) {e.printStackTrace();}
-                    Elbow.set(0);
+             //Elbow.set(-0.5); // TO BE EXPERIMENTED
+               //     try
+                 //   {
+                   //     Thread.sleep(200);
+                    //} catch (Exception e) {e.printStackTrace();}
+                    //Elbow.set(0);
+            lowerArmEncoder.reset();
         }
 
         if(j2.getRawButton(7))
@@ -752,6 +742,12 @@ lcd.updateLCD();
                     Elbow.set(0);
                         break;
                 case 5:
+                     Elbow.set(-0.5); // TO BE EXPERIMENTED
+                    try // for 0.3s
+                    {
+                        Thread.sleep(250);
+                    } catch (Exception e) {e.printStackTrace();}
+                    Elbow.set(0);
                     breakOff.set(Relay.Value.kOn);
                     breakOn.set(Relay.Value.kOff);
                     while(lowerArmEncoder.get() < DoNotUse)//low Middle
@@ -768,10 +764,16 @@ lcd.updateLCD();
                     }
                     break;
                 case 9:
+                     Elbow.set(-0.5); // TO BE EXPERIMENTED
+                    try // for 0.3s
+                    {
+                        Thread.sleep(250);
+                    } catch (Exception e) {e.printStackTrace();}
+                    Elbow.set(0);
                     //low high
                     breakOff.set(Relay.Value.kOn);
                     breakOn.set(Relay.Value.kOff);
-                    while(lowerArmEncoder.get() < DoNotUse)
+                    while(lowerArmEncoder.get() < 420)
                     {
                         Sholder.set(-.8);
                     }
@@ -783,13 +785,14 @@ lcd.updateLCD();
                         upperArmRaised = true;
 
                     }
+                    mmDistance = 760;
                     break;
                 case 2:
                     //high low
-                    Elbow.set(0.5); // TO BE EXPERIMENTED
+                    Elbow.set(-0.5); // TO BE EXPERIMENTED
                     try // for 0.3s
                     {
-                        Thread.sleep(550);
+                        Thread.sleep(250);
                     } catch (Exception e) {e.printStackTrace();}
                     Elbow.set(0);
 
@@ -800,6 +803,12 @@ lcd.updateLCD();
                         break;
 
                 case 4:
+                     Elbow.set(-0.5); // TO BE EXPERIMENTED
+                    try // for 0.3s
+                    {
+                        Thread.sleep(250);
+                    } catch (Exception e) {e.printStackTrace();}
+                    Elbow.set(0);
                     //high middle
                     breakOff.set(Relay.Value.kOn);
                     breakOn.set(Relay.Value.kOff);
@@ -817,10 +826,16 @@ lcd.updateLCD();
                     }
                     break;
                 case 8:
+                     Elbow.set(-0.5); // TO BE EXPERIMENTED
+                    try // for 0.3s
+                    {
+                        Thread.sleep(250);
+                    } catch (Exception e) {e.printStackTrace();}
+                    Elbow.set(0);
                     //high high
                     breakOff.set(Relay.Value.kOn);
                     breakOn.set(Relay.Value.kOff);
-                    while(lowerArmEncoder.get() < DoNotUse)
+                    while(lowerArmEncoder.get() < 430)
                     {
                         Sholder.set(-.8);
                     }
