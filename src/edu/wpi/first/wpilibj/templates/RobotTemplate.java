@@ -214,7 +214,7 @@ public class RobotTemplate extends IterativeRobot
         {
             //dead reckoning
             //BE SURE TO RAISE ARM BC THIS IS HIGH LOW
-
+            setArmHeight(height);
             straight(speed);
             if(closerThan(665))
             {
@@ -304,7 +304,8 @@ public class RobotTemplate extends IterativeRobot
     public void teleopPeriodic()
     {
 
-        //System.out.println(lowerArmEncoder.get() + " counts");
+
+       // System.out.println(lowerArmEncoder.get() + " counts");
         try{
         setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
         setCoast(fRight);
@@ -330,7 +331,7 @@ public class RobotTemplate extends IterativeRobot
         updateUpperArm();
 
        // if(j2.getRawButton(10) && controller.getRawButton(2) && controller.getRawButton(8))
-            //minibot.set(Relay.Value.kOff);
+            //minibot.set(Relay.Value.kOff);c
 
         if(!breaking())
         {
@@ -416,10 +417,10 @@ public class RobotTemplate extends IterativeRobot
 
     public double deadzone(double d)
     {//deadzone for input devices
-        if (Math.abs(d) < .1) {
+        if (Math.abs(d) < .3) {
             return 0;
         }
-        return d / Math.abs(d) * ((Math.abs(d) - .1) / .9);
+        return d / Math.abs(d) * ((Math.abs(d) - .3) / .7);
     }
     //comment
      public double tinyDeadzone(double d)
@@ -492,13 +493,19 @@ public class RobotTemplate extends IterativeRobot
             breakOff.set(Relay.Value.kOn);
             breakOn.set(Relay.Value.kOff);
         }
-
-        Sholder.set(deadzone(-controller.getY()));
+        //if(deadzone(controller.getY()) > 0) this may work now
+         //   Sholder.set(0.5*deadzone(-controller.getY()));
+       // else
+        System.out.println(deadzone(-controller.getY()));
+            Sholder.set(deadzone(-controller.getY()));
+        
+       // Elbow.set(deadzone(0.4*controller.getY()));
+            
     }
 
     public void updateUpperArm()
     {
-        Elbow.set(-deadzone(controller.getRawAxis(5)));
+        Elbow.set(deadzone(controller.getRawAxis(5)));
 
     }
     boolean run = true;
@@ -734,7 +741,7 @@ lcd.updateLCD();
                     Elbow.set(0.2); // TO BE EXPERIMENTED
                     try // for 0.3s
                     {
-                        Thread.sleep(300);
+                        Thread.sleep(550);
                     } catch (Exception e) {e.printStackTrace();}
                     Elbow.set(0);
 
