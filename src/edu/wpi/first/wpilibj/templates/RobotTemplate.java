@@ -701,7 +701,7 @@ lcd.updateLCD();
                     breakOn.set(Relay.Value.kOff);
                     while(LowerArmEncoder.get() < DoNotUse)//low Middle
                     {
-                        Sholder.set(.8);
+                        Sholder.set(-.8);
                     }
                     breakOff.set(Relay.Value.kOff);
                     breakOn.set(Relay.Value.kOn);
@@ -718,7 +718,7 @@ lcd.updateLCD();
                     breakOn.set(Relay.Value.kOff);
                     while(LowerArmEncoder.get() < DoNotUse)
                     {
-                        Sholder.set(.8);
+                        Sholder.set(-.8);
                     }
                     breakOff.set(Relay.Value.kOff);
                     breakOn.set(Relay.Value.kOn);
@@ -738,7 +738,7 @@ lcd.updateLCD();
                     } catch (Exception e) {e.printStackTrace();}
                     Elbow.set(0);
 
-                    Sholder.set(0.6);
+                    Sholder.set(-0.8);
                     try {Thread.sleep(300);} // 0.3s for shoulder
                     catch (Exception e) {e.printStackTrace();}
                     Sholder.set(0);
@@ -750,7 +750,7 @@ lcd.updateLCD();
                     breakOn.set(Relay.Value.kOff);
                     while(LowerArmEncoder.get() < DoNotUse)
                     {
-                        Sholder.set(.8);
+                        Sholder.set(-.8);
                     }
                     breakOff.set(Relay.Value.kOff);
                     breakOn.set(Relay.Value.kOn);
@@ -767,7 +767,7 @@ lcd.updateLCD();
                     breakOn.set(Relay.Value.kOff);
                     while(LowerArmEncoder.get() < DoNotUse)
                     {
-                        Sholder.set(.8);
+                        Sholder.set(-.8);
                     }
                     breakOff.set(Relay.Value.kOff);
                     breakOn.set(Relay.Value.kOn);
