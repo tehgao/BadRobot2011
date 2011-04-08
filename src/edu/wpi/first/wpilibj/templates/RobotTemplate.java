@@ -320,6 +320,28 @@ public class RobotTemplate extends IterativeRobot
         //setBreak(lowerArm);
         //setBreak(upperArm);
         }catch (Exception e) {}
+
+        if(j1.getRawButton(7))
+        {
+             Elbow.set(-0.5); // TO BE EXPERIMENTED
+                    try
+                    {
+                        Thread.sleep(200);
+                    } catch (Exception e) {e.printStackTrace();}
+                    Elbow.set(0);
+        }
+
+        if(j2.getRawButton(7))
+        {
+             Elbow.set(-0.5); // TO BE EXPERIMENTED
+                    try
+                    {
+                        Thread.sleep(300);
+                    } catch (Exception e) {e.printStackTrace();}
+                    Elbow.set(0);
+        }
+
+
         updateComp();
         updateGear();
         updateDS();
@@ -340,6 +362,13 @@ public class RobotTemplate extends IterativeRobot
         {
             System.out.println("Mini1");
             minibot.set(Relay.Value.kForward);
+        }
+
+        if(j1.getRawButton(9) && j2.getRawButton(9))
+        {
+            System.out.println("Mini1");
+            minibot.set(Relay.Value.kOff);
+            //minibot = new Relay(4,4);
         }
       /*  else
         {
