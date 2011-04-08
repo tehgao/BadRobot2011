@@ -118,7 +118,7 @@ public class RobotTemplate extends IterativeRobot
                 Kraken = new Solenoid(8,1);
                 Kraken.set(false);
 
-                //minibot = new Relay(4, 3);
+                minibot = new Relay(4, 4);
                 //minibot.setDirection(Relay.Direction.kForward);
                 //minibot.set(Relay.Value.kOn);
                 ds = DriverStation.getInstance();
@@ -203,11 +203,18 @@ public class RobotTemplate extends IterativeRobot
                         (int)(middleValue?0:2)+
                         (int)(leftValue?0:4);
 
+
+        if (ds.getAnalogIn(2) > 0)
+            {
+                //vegetable robot
+                return;
+            }
         if(!armAtHeight)
         {
             setArmHeight(height);
             armAtHeight = true;
         }//raises arm for autonomous
+        
 
         if (ds.getAnalogIn(1) > 0)
         {
@@ -275,7 +282,7 @@ public class RobotTemplate extends IterativeRobot
 
         //System.out.println(ultraSonic.getRangeMM());
 
-        if(closerThan(665))
+        if(closerThan(600))
         {
             straight(0); //Stop
             hangTube();
@@ -303,8 +310,8 @@ public class RobotTemplate extends IterativeRobot
     public void teleopPeriodic()
     {
 
-        System.out.println(ultraSonic.getRangeMM());
-       // System.out.println(lowerArmEncoder.get() + " counts");
+        //System.out.println(ultraSonic.getRangeMM());
+        System.out.println(lowerArmEncoder.get() + " counts");
         try{
         setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
         setCoast(fRight);
@@ -329,14 +336,27 @@ public class RobotTemplate extends IterativeRobot
         updateLowerArm();
         updateUpperArm();
 
-       // if(j2.getRawButton(10) && j1.getRawButton(10)))
-            //minibot.set(Relay.Value.kOff);c
-
-        if(!breaking())
+        if(j1.getRawButton(10) && j2.getRawButton(10))
         {
+            System.out.println("Mini1");
+            minibot.set(Relay.Value.kForward);
+        }
+      /*  else
+        {
+             minibot.set(Relay.Value.kForward);
+        }*/
+
+       /* if(j1.getRawButton(9) && j2.getRawButton(8) && j1.getThrottle() > 0)
+        {
+            System.out.println("Mini1");
+            minibot.set(Relay.Value.kForward);
+        }*/
+
+
+       
          setLefts(deadzone(-j1.getY()));
          setRights(deadzone(-j2.getY()));
-        }
+        
     }
 
     private void setLefts(double d)
@@ -695,10 +715,10 @@ lcd.updateLCD();
         int DoNotUse = 0;
           switch(height){
                 default:
-                    Elbow.set(0.2); // TO BE EXPERIMENTED
+                    Elbow.set(0.5); // TO BE EXPERIMENTED
                     try // for 0.3s
                     {
-                        Thread.sleep(300);
+                        Thread.sleep(550);
                     } catch (Exception e) {e.printStackTrace();}
                     Elbow.set(0);
                         break;
@@ -737,7 +757,7 @@ lcd.updateLCD();
                     break;
                 case 2:
                     //high low
-                    Elbow.set(0.2); // TO BE EXPERIMENTED
+                    Elbow.set(0.5); // TO BE EXPERIMENTED
                     try // for 0.3s
                     {
                         Thread.sleep(550);
