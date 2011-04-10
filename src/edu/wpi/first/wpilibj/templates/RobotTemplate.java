@@ -70,7 +70,7 @@ public class RobotTemplate extends IterativeRobot
     DriverStationLCD lcd;
     boolean upperArmRaised;
     boolean lowerArmRaised;
-
+    //boolean firstrun = true; // ensuring while loop and brake on/off only run once in auto
     DigitalInput upperLimitS, lowerLimitS, upperLimitE, lowerLimitE;
     Relay minibot, breakOn, breakOff;
 
@@ -160,11 +160,11 @@ public class RobotTemplate extends IterativeRobot
 
     boolean atFork = false; // if robot has arrived at fork
     boolean armAtHeight = false;
-    int lastSense = 0; // last LineTracker which saw line (1 for left, 2 for right)
-    int mmDistance = 0;
+    int lastSense = 0; // last LineTracker which saw line (1 for left, 2 for right
+    int mmDistance;
     public void autonomousPeriodic()
     {
-
+        
         shifter.set(true);
          if (doneWithAuto)
          {
@@ -177,16 +177,18 @@ public class RobotTemplate extends IterativeRobot
          usingFork = ds.getDigitalIn(5);
          updateComp();
          updateDS();
+         if(hasHangedTube)
+            System.out.println("hung");
          boolean leftValue = left.get();
          boolean middleValue = middle.get();
          boolean rightValue = right.get();
          //boolean leftValue2 = left2.get();
          //boolean middleValue2 = middle2.get();
          //boolean rightValue2 = right2.get();
-         int height = (int)(ds.getDigitalIn(5)?0:1)+
-                        (int)(ds.getDigitalIn(6)?0:2)+
-                        (int)(ds.getDigitalIn(7)?0:4)+
-                        (int)(ds.getDigitalIn(8)?0:8);
+         int height = (int)(ds.getDigitalIn(5)?1:0)+
+                        (int)(ds.getDigitalIn(6)?2:0)+
+                        (int)(ds.getDigitalIn(7)?4:0)+
+                        (int)(ds.getDigitalIn(8)?8:0);
         double speed = 0.3;
        // System.out.println(rightValue + " " + middleValue + " " + leftValue);
         int lineState = (int)(rightValue?0:1)+
@@ -201,6 +203,7 @@ public class RobotTemplate extends IterativeRobot
             }
         if(!armAtHeight)
         {
+            System.out.println("Moving arm");
             setArmHeight(height);
             armAtHeight = true;
         }//raises arm for autonomous
@@ -212,7 +215,7 @@ public class RobotTemplate extends IterativeRobot
             //BE SURE TO RAISE ARM BC THIS IS HIGH LOW
             setArmHeight(height);
             straight(speed);
-            if(closerThan(665))
+            if(closerThan(mmDistance))
             {
                 straight(0); //Stop
                 hangTube();
@@ -321,14 +324,10 @@ public class RobotTemplate extends IterativeRobot
             lowerArmEncoder.reset();
         }
 
-        if(j2.getRawButton(7))
+       
+         if(j1.getRawButton(6))
         {
-             Elbow.set(-0.5); // TO BE EXPERIMENTED
-                    try
-                    {
-                        Thread.sleep(300);
-                    } catch (Exception e) {e.printStackTrace();}
-                    Elbow.set(0);
+            armAtHeight = false;
         }
 
 
@@ -565,7 +564,7 @@ public class RobotTemplate extends IterativeRobot
 
             case 0: //No sensors see the line
                 System.out.println("Lost the line: " + lastSense);
-                speed = .4;
+                speed = .5;
                 if(waitFor == 1)
                 {
                     hardLeft(speed);
@@ -729,17 +728,19 @@ lcd.updateLCD();
 
     public void setArmHeight(int height)
     {
+        System.out.println("ArmHeightMethod : " + height);
         boolean lowerArmRaised = false;
         boolean upperArmRaised = false;
         int DoNotUse = 0;
           switch(height){
                 default:
-                    Elbow.set(0.5); // TO BE EXPERIMENTED
+                    Elbow.set(-0.5); // TO BE EXPERIMENTED
                     try // for 0.3s
                     {
-                        Thread.sleep(550);
+                        Thread.sleep(450);
                     } catch (Exception e) {e.printStackTrace();}
                     Elbow.set(0);
+                    mmDistance = 665;
                         break;
                 case 5:
                      Elbow.set(-0.5); // TO BE EXPERIMENTED
@@ -752,7 +753,9 @@ lcd.updateLCD();
                     breakOn.set(Relay.Value.kOff);
                     while(lowerArmEncoder.get() < DoNotUse)//low Middle
                     {
-                        Sholder.set(-.8);
+                        updateComp();
+                        updateDS();
+                        Sholder.set(-1);
                     }
                     breakOff.set(Relay.Value.kOff);
                     breakOn.set(Relay.Value.kOn);
@@ -764,6 +767,7 @@ lcd.updateLCD();
                     }
                     break;
                 case 9:
+                    System.out.println("Case 9");
                      Elbow.set(-0.5); // TO BE EXPERIMENTED
                     try // for 0.3s
                     {
@@ -775,6 +779,9 @@ lcd.updateLCD();
                     breakOn.set(Relay.Value.kOff);
                     while(lowerArmEncoder.get() < 420)
                     {
+                         updateComp();
+                         updateDS();
+                        System.out.println("Encoder");
                         Sholder.set(-.8);
                     }
                     breakOff.set(Relay.Value.kOff);
@@ -792,7 +799,7 @@ lcd.updateLCD();
                     Elbow.set(-0.5); // TO BE EXPERIMENTED
                     try // for 0.3s
                     {
-                        Thread.sleep(250);
+                        Thread.sleep(450);
                     } catch (Exception e) {e.printStackTrace();}
                     Elbow.set(0);
 
@@ -814,6 +821,8 @@ lcd.updateLCD();
                     breakOn.set(Relay.Value.kOff);
                     while(lowerArmEncoder.get() < DoNotUse)
                     {
+                        updateComp();
+                        updateDS();
                         Sholder.set(-.8);
                     }
                     breakOff.set(Relay.Value.kOff);
@@ -826,27 +835,45 @@ lcd.updateLCD();
                     }
                     break;
                 case 8:
-                     Elbow.set(-0.5); // TO BE EXPERIMENTED
+                      Elbow.set(-0.5); // TO BE EXPERIMENTED
                     try // for 0.3s
+                              
                     {
                         Thread.sleep(250);
                     } catch (Exception e) {e.printStackTrace();}
                     Elbow.set(0);
                     //high high
-                    breakOff.set(Relay.Value.kOn);
-                    breakOn.set(Relay.Value.kOff);
-                    while(lowerArmEncoder.get() < 430)
-                    {
-                        Sholder.set(-.8);
-                    }
-                    breakOff.set(Relay.Value.kOff);
-                    breakOn.set(Relay.Value.kOn);
-                    while(!upperArmRaised)
-                    {
-                        //timer here if needed
-                        upperArmRaised = true;
+                    
+                   // if (firstrun)
+                    
+                            breakOff.set(Relay.Value.kOn);
+                            breakOn.set(Relay.Value.kOff);
+                           // firstrun = false;
 
-                    }
+
+
+                        while(lowerArmEncoder.get() < 430)
+                        {
+                            DriverStationLCD lcd = DriverStationLCD.getInstance();
+                            lcd.println(DriverStationLCD.Line.kMain6, 1, "I'm trying, I really am!!!");
+                            System.out.println("Encoder:" + lowerArmEncoder.get());
+
+                            lcd.updateLCD();
+                            updateComp();
+                             updateDS();
+                            Sholder.set(0.3);
+
+                        }
+                        Sholder.set(0);
+                        breakOff.set(Relay.Value.kOff);
+                        breakOn.set(Relay.Value.kOn);
+                        if(!upperArmRaised)
+                        {
+                            //timer here if needed
+                            upperArmRaised = true;
+
+                        }
+
                     break;
                 }
     }
