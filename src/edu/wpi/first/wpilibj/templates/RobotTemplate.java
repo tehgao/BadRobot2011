@@ -85,7 +85,7 @@ public class RobotTemplate extends IterativeRobot
     boolean lowerArmRaised;
     boolean atFork = false; // if robot has arrived at fork
     boolean armAtHeight = false;
-    int lastSense = 0; // last LineTracker which saw line (1 for left, 2 for right
+    int lastSense = 0; // last LineTracker camera which saw line (1 for left, 2 for right
     int mmDistance;
     //boolean firstrun = true; // ensuring while loop and brake on/off only run once in auto
     int autoState;
@@ -479,8 +479,7 @@ public class RobotTemplate extends IterativeRobot
        //; try{jag.configNeutralMode(Jaguar.NeutralMode.kCoast);} catch (Exception e) {e.printStackTrace();}
     }
 
-    //Lucas Mark 1
-
+    //updates the compressor. Should be called once every itteration.
     public void updateComp()
     {
         if (air.getPressureSwitchValue())
@@ -489,7 +488,9 @@ public class RobotTemplate extends IterativeRobot
             air.start();
     }
 
-    boolean switchStateShift = false;
+    //boolean switchStateShift = false;
+
+    //Updates the pneumatic transmission with joystick buttons
     public void updateGear()
     {
 
@@ -516,51 +517,61 @@ public class RobotTemplate extends IterativeRobot
         }
         return d / Math.abs(d) * ((Math.abs(d) - .3) / .7);
     }
+
+
     //comment
      public double tinyDeadzone(double d)
-    {//deadzone for input devices
+    {//Smaller deadzone for input devices
         if (Math.abs(d) < .05) {
             return 0;
         }
         return d / Math.abs(d) * ((Math.abs(d) - .05) / .95);
     }
 
+    //sets all drive motors to the speed
     public void straight(double speed)
     {
         setLefts(speed);
         setRights(speed);
     }
 
+    //rotates the robot left at the speed speed
     public void hardLeft(double speed)
     {
         setLefts(-speed);
         setRights(speed);
     }
 
+    //rotates the robot to the right at speed speed
     public void hardRight(double speed)
     {
         setLefts(speed);
         setRights(-speed);
     }
 
+    //makes a left turn at speed speed
     public void softLeft(double speed)
     {
         setLefts(0);
         setRights(speed);
     }
 
+    //makes a right turn at speed speed
     public void softRight(double speed)
     {
         setLefts(speed);
         setRights(0);
     }
 
-    int lastRange = 0; // ascertains that you are less than 1500mm
+
+    int lastRange = 0; // records the number of checks made with a positive ID on the specified range
+    //this eliminates random error
+    //Returns true if the ultrasonic reads a range closer than the argument four times in a row
     public boolean closerThan(int millimeters)
     {
         if (ultraSonic.isRangeValid() && ultraSonic.getRangeMM() < millimeters)
         {
-            if (lastRange > 4) // 4 checks to stop
+            if (lastRange > 4) // 5 checks to stop
             {
                 return true;
             }
@@ -574,9 +585,9 @@ public class RobotTemplate extends IterativeRobot
 
     }
 
+    //updates the lower arm motor based off of the contoller's joystick values
     public void updateLowerArm()
     {
-        //System.out.println(deadzone(-controller.getY()));
         if(deadzone(-controller.getY()) == 0.0)
         {
             breakOn.set(Relay.Value.kOn);
@@ -587,30 +598,39 @@ public class RobotTemplate extends IterativeRobot
             breakOff.set(Relay.Value.kOn);
             breakOn.set(Relay.Value.kOff);
         }
-        //if(deadzone(controller.getY()) > 0) this may work now
-         //   Sholder.set(0.5*deadzone(-controller.getY()));
-       // else
-       // System.out.println(deadzone(-controller.getY()));
+        /*What is this for?
+         if(deadzone(controller.getY()) > 0) //this may work now
+            Sholder.set(0.5*deadzone(-controller.getY()));
+         else
+            System.out.println(deadzone(-controller.getY()));
+         */
             Sholder.set(deadzone(-controller.getY()));
         
-       // Elbow.set(deadzone(0.4*controller.getY()));
+       // Elbow.set(deadzone(0.4*controller.getY()));//this keeps the elbow from locking with the arm
             
     }
 
+    //updates the upper arm according to joystick values from the controller
     public void updateUpperArm()
     {
         Elbow.set(deadzone(controller.getRawAxis(5)));
 
     }
-    boolean run = true;
+    
 
+    //changes the claw to the state it is not currently in (open-->closed, closed-->open)
     public void changeKraken()
     {
         Kraken.set(!Kraken.get());
     }
 
+    boolean run = true;//should the autonomous do anything? This is never changed anyway (see next comment)
+    int waitFor = 0;//remanants of a past age (no longer used)
 
-    int waitFor = 0;
+    /*makes the robot follow a line. The arugument linestate is an integer calulated earlier that is fed into a
+     * switch. It represents what sensors see the line. Speed sets the speed at which the robot moves, autostate
+     * is in case the type of autonomous is used in later coding for this method
+    */
     public void moveWhileTracking(int lineState, double speed, int autoState)
     {
 
@@ -692,43 +712,44 @@ public class RobotTemplate extends IterativeRobot
                 }
                 break;
             default:
-                System.out.println("You're doomed. Run.");
+                System.out.println("You're doomed. Run.");//this should NEVER occur
                 break;
         }
         }
     }
 
+    //checks to see if the motors should be breaking. If so it sets the motors to break(CAN only) 
+    //and returns true
     public boolean breaking()
     {
         //System.out.println(j1.getRawButton(3) + " : " + j2.getRawButton(3) + " : " + j2.getRawButton(3));
         if(j1.getRawButton(3) || j2.getRawButton(3))
         {
            try{
-           setBreak(fLeft);
-           setBreak(bLeft);
-           setBreak(fRight);
-           setBreak(bRight);
-
+                setBreak(fLeft);
+                setBreak(bLeft);
+                setBreak(fRight);
+                setBreak(bRight);
            }catch(CANTimeoutException e){
-DriverStationLCD lcd = DriverStationLCD.getInstance();
-lcd.println(DriverStationLCD.Line.kMain6, 1, "Breaking failed");
-lcd.updateLCD();
-            return false;
-        }
+                DriverStationLCD lcd = DriverStationLCD.getInstance();
+                lcd.println(DriverStationLCD.Line.kMain6, 1, "Breaking failed");
+                lcd.updateLCD();
+                return false;
+            }
+            return true;
         }
         else if (j1.getRawButton(2) || j2.getRawButton(2))
         {
-             try{
-           setBreak(fLeft);
-           setBreak(bLeft);
-           setBreak(fRight);
-           setBreak(bRight);
+           try{
+                setBreak(fLeft);
+                setBreak(bLeft);
+                setBreak(fRight);
+                setBreak(bRight);
 
-           }catch(CANTimeoutException e){
-DriverStationLCD lcd = DriverStationLCD.getInstance();
-lcd.println(DriverStationLCD.Line.kMain6, 1, "Breaking failed");
-lcd.updateLCD();}
-
+                }catch(CANTimeoutException e){
+                DriverStationLCD lcd = DriverStationLCD.getInstance();
+                lcd.println(DriverStationLCD.Line.kMain6, 1, "Breaking failed");
+                lcd.updateLCD();}
              straight(0);
              return true;
         }
@@ -740,23 +761,18 @@ lcd.updateLCD();}
            setCoast(bRight);
 
            }catch(CANTimeoutException e){
-DriverStationLCD lcd = DriverStationLCD.getInstance();
-lcd.println(DriverStationLCD.Line.kMain6, 1, "Breaking failed");
-lcd.updateLCD();
+            DriverStationLCD lcd = DriverStationLCD.getInstance();
+            lcd.println(DriverStationLCD.Line.kMain6, 1, "Breaking failed");
+            lcd.updateLCD();
         }
         }
         return false;
     }
 
-    public void hardBreak()
+    public void hangTube() //assumes bot is already at the rack, then hangs the tube
     {
 
-    }
-
-    public void hangTube() //assumes bot is already there at the rack
-    {
-
-         Kraken.set(true);
+         Kraken.set(true);//opens the claw
                         try
                         {
                             Thread.sleep(500); //And after 1/2 seconds...
@@ -765,7 +781,8 @@ lcd.updateLCD();
                         {
                             e.printStackTrace();
                         }
-                        straight(-.6);
+                        
+                        straight(-.6);//back up
 
                         try
                         {
@@ -776,21 +793,23 @@ lcd.updateLCD();
                             e.printStackTrace();
                         }
 
-                        straight(0);
+                        straight(0);//stop
 
-                        hasHangedTube = true;
+                        hasHangedTube = true;//the deed is done
 
 
     }
 
+    //sets the arm to a pre-set height, arg height represents the option, not a measurement.
+    //unfinished!!!
     public void setArmHeight(int height)
     {
         System.out.println("ArmHeightMethod : " + height);
         boolean lowerArmRaised = false;
         boolean upperArmRaised = false;
-        int DoNotUse = 0;
+        int DoNotUse = 0;//fills the place of constants for later
           switch(height){
-                default:
+                default://low low
                     Elbow.set(-0.5); // TO BE EXPERIMENTED
                     try // for 0.3s
                     {
@@ -799,7 +818,7 @@ lcd.updateLCD();
                     Elbow.set(0);
                     mmDistance = 665;
                         break;
-                case 5:
+                case 5://low middle
                      Elbow.set(-0.5); // TO BE EXPERIMENTED
                     try // for 0.3s
                     {
@@ -810,12 +829,18 @@ lcd.updateLCD();
                     breakOn.set(Relay.Value.kOff);
                     while(lowerArmEncoder.get() < DoNotUse)//low Middle
                     {
-                        updateComp();
-                        updateDS();
-                        Sholder.set(-1);
+                       DriverStationLCD lcd = DriverStationLCD.getInstance();
+                       lcd.println(DriverStationLCD.Line.kMain6, 1, "I'm trying, I really am!!!");
+                       System.out.println("Encoder:" + lowerArmEncoder.get());
+
+                       lcd.updateLCD();
+                       updateComp();
+                       updateDS();
+                       Sholder.set(0.3);
                     }
-                    breakOff.set(Relay.Value.kOff);
-                    breakOn.set(Relay.Value.kOn);
+                        Sholder.set(0);
+                        breakOff.set(Relay.Value.kOff);
+                        breakOn.set(Relay.Value.kOn);
                     while(!upperArmRaised)
                     {
                         //timer here if needed
@@ -823,7 +848,7 @@ lcd.updateLCD();
 
                     }
                     break;
-                case 9:
+                case 9://low high
                     System.out.println("Case 9");
                      Elbow.set(-0.5); // TO BE EXPERIMENTED
                     try // for 0.3s
@@ -836,20 +861,24 @@ lcd.updateLCD();
                     breakOn.set(Relay.Value.kOff);
                     while(lowerArmEncoder.get() < 420)
                     {
-                         updateComp();
-                         updateDS();
-                        System.out.println("Encoder");
-                        Sholder.set(-.8);
+                         DriverStationLCD lcd = DriverStationLCD.getInstance();
+                       lcd.println(DriverStationLCD.Line.kMain6, 1, "I'm trying, I really am!!!");
+                       System.out.println("Encoder:" + lowerArmEncoder.get());
+
+                       lcd.updateLCD();
+                       updateComp();
+                       updateDS();
+                       Sholder.set(0.3);
                     }
-                    breakOff.set(Relay.Value.kOff);
-                    breakOn.set(Relay.Value.kOn);
+                        Sholder.set(0);
+                        breakOff.set(Relay.Value.kOff);
+                        breakOn.set(Relay.Value.kOn);
                     while(!upperArmRaised)
                     {
                         //timer here if needed
                         upperArmRaised = true;
 
                     }
-                    mmDistance = 760;
                     break;
                 case 2:
                     //high low
@@ -859,14 +888,29 @@ lcd.updateLCD();
                         Thread.sleep(450);
                     } catch (Exception e) {e.printStackTrace();}
                     Elbow.set(0);
+                    while(lowerArmEncoder.get() < DoNotUse)
+                    {
+                       DriverStationLCD lcd = DriverStationLCD.getInstance();
+                       lcd.println(DriverStationLCD.Line.kMain6, 1, "I'm trying, I really am!!!");
+                       System.out.println("Encoder:" + lowerArmEncoder.get());
 
-                    Sholder.set(-0.8);
-                    try {Thread.sleep(300);} // 0.3s for shoulder
-                    catch (Exception e) {e.printStackTrace();}
-                    Sholder.set(0);
-                        break;
+                       lcd.updateLCD();
+                       updateComp();
+                       updateDS();
+                       Sholder.set(0.3);
+                    }
+                        Sholder.set(0);
+                        breakOff.set(Relay.Value.kOff);
+                        breakOn.set(Relay.Value.kOn);
+                    while(!upperArmRaised)
+                    {
+                        //timer here if needed
+                        upperArmRaised = true;
 
-                case 4:
+                    }
+                    break;
+
+                case 4://high middle
                      Elbow.set(-0.5); // TO BE EXPERIMENTED
                     try // for 0.3s
                     {
@@ -877,13 +921,18 @@ lcd.updateLCD();
                     breakOff.set(Relay.Value.kOn);
                     breakOn.set(Relay.Value.kOff);
                     while(lowerArmEncoder.get() < DoNotUse)
-                    {
-                        updateComp();
-                        updateDS();
-                        Sholder.set(-.8);
+                    {  DriverStationLCD lcd = DriverStationLCD.getInstance();
+                       lcd.println(DriverStationLCD.Line.kMain6, 1, "I'm trying, I really am!!!");
+                       System.out.println("Encoder:" + lowerArmEncoder.get());
+
+                       lcd.updateLCD();
+                       updateComp();
+                       updateDS();
+                       Sholder.set(0.3);
                     }
-                    breakOff.set(Relay.Value.kOff);
-                    breakOn.set(Relay.Value.kOn);
+                        Sholder.set(0);
+                        breakOff.set(Relay.Value.kOff);
+                        breakOn.set(Relay.Value.kOn);
                     while(!upperArmRaised)
                     {
                         //timer here if needed
@@ -891,7 +940,7 @@ lcd.updateLCD();
 
                     }
                     break;
-                case 8:
+                case 8://high high
                       Elbow.set(-0.5); // TO BE EXPERIMENTED
                     try // for 0.3s
                               
@@ -900,27 +949,19 @@ lcd.updateLCD();
                     } catch (Exception e) {e.printStackTrace();}
                     Elbow.set(0);
                     //high high
-                    
-                   // if (firstrun)
-                    
-                            breakOff.set(Relay.Value.kOn);
-                            breakOn.set(Relay.Value.kOff);
-                           // firstrun = false;
+                   breakOff.set(Relay.Value.kOn);
+                   breakOn.set(Relay.Value.kOff);
+                   while(lowerArmEncoder.get() < 430)
+                   {
+                       DriverStationLCD lcd = DriverStationLCD.getInstance();
+                       lcd.println(DriverStationLCD.Line.kMain6, 1, "I'm trying, I really am!!!");
+                       System.out.println("Encoder:" + lowerArmEncoder.get());
 
-
-
-                        while(lowerArmEncoder.get() < 430)
-                        {
-                            DriverStationLCD lcd = DriverStationLCD.getInstance();
-                            lcd.println(DriverStationLCD.Line.kMain6, 1, "I'm trying, I really am!!!");
-                            System.out.println("Encoder:" + lowerArmEncoder.get());
-
-                            lcd.updateLCD();
-                            updateComp();
-                             updateDS();
-                            Sholder.set(0.3);
-
-                        }
+                       lcd.updateLCD();
+                       updateComp();
+                       updateDS();
+                       Sholder.set(0.3);
+                    }
                         Sholder.set(0);
                         breakOff.set(Relay.Value.kOff);
                         breakOn.set(Relay.Value.kOn);
@@ -935,15 +976,7 @@ lcd.updateLCD();
                 }
     }
 
-    public int countToDistS()
-    {
-        return 0; //lowerArmEncoder.get();
-    }
-
-    private double countToDistE()
-    {
-        return 0;//upperArmEncoder.get();
-    }
+   
 
 }
 
