@@ -7,7 +7,7 @@
 
 package edu.wpi.first.wpilibj.templates;
 import edu.wpi.first.wpilibj.IterativeRobot;
-//import edu.wpi.first.wpilibj.CANJaguar;'
+//import edu.wpi.first.wpilibj.CANJaguar;
 import edu.wpi.first.wpilibj.Jaguar;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DigitalOutput;
@@ -37,28 +37,42 @@ public class RobotTemplate extends IterativeRobot
 * used for any initialization code.
 */
 
-    Joystick j1 = new Joystick(3);
-    Joystick j2 = new Joystick(1);
-    Joystick controller = new Joystick(2);
-    Jaguar fLeft, fRight, bLeft, bRight; //lowerArm, upperArm; //motors
+    //These joystick numbers are assigned in order on the drivers station.
+    Joystick j1 = new Joystick(3);//Left
+    Joystick j2 = new Joystick(1);//Right
+    Joystick controller = new Joystick(2);//Xbox
+
+    //motors
+    Jaguar fLeft, fRight, bLeft, bRight; //lowerArm, upperArm;
     Victor Elbow, Sholder;
+
+    //input output
     DigitalOutput output; // for ultrasonic
     DigitalInput input;
     Ultrasonic ultraSonic;
     //AxisCamera cam; // camera
     Timer timer = new Timer(); // timer
     DigitalInput left; // for LineTracker
-    DigitalInput middle;
-    DigitalInput right , left2, middle2, right2;
+    DigitalInput middle;//for LineTracker
+    DigitalInput right;//for LineTracker
+    Encoder lowerArmEncoder;//Tracks movement of the lower arm joint
+
+    //What are these for?
+    DigitalInput left2, middle2, right2;//
     DigitalInput upper1, upper2, lower1, lower2;
+    DigitalInput upperLimitS, lowerLimitS, upperLimitE, lowerLimitE;
+
+    //Drivers Station
     DriverStation ds;
+    DriverStationLCD lcd;
+
+    //Pneumatics
     Compressor air;
     Solenoid shifter;//shifts
-    Encoder lowerArmEncoder;
-
-
     Solenoid Kraken;
+    Relay minibot, breakOn, breakOff;
 
+    //Variables to remember state
     boolean forkLeft = false;
     boolean pauseAtBegin = false; //Will the robot pause at the beginning of autonomous before moving?
     boolean stopAfterHang = false; //Will the robot stop after it hangs a ubertube?
@@ -67,35 +81,47 @@ public class RobotTemplate extends IterativeRobot
     boolean hasAlreadyPaused; //Has the robot already paused at the beginning? (Assuming that pauseAtBegin is true)
     boolean doneWithAuto; //Has the robot done what it needs to in auto mode?
     boolean usingFork; //Are we taking the forked path?
-    DriverStationLCD lcd;
     boolean upperArmRaised;
     boolean lowerArmRaised;
+    boolean atFork = false; // if robot has arrived at fork
+    boolean armAtHeight = false;
+    int lastSense = 0; // last LineTracker which saw line (1 for left, 2 for right
+    int mmDistance;
     //boolean firstrun = true; // ensuring while loop and brake on/off only run once in auto
-    DigitalInput upperLimitS, lowerLimitS, upperLimitE, lowerLimitE;
-    Relay minibot, breakOn, breakOff;
-
     int autoState;
+    boolean KrakenIsWaiting = false;//prevents multiple firings upon button press
 
+
+    /*
+     * Initializes all robot components
+     * This only runs ONCE upon bootup
+     */
     public void robotInit()
     {
             try
             {
-                   breakOn = new Relay(3);
-                   breakOn.setDirection(Relay.Direction.kForward);
-                   breakOff = new Relay(2);
-                   breakOff.setDirection(Relay.Direction.kReverse);
+                //initializes the arm break and sets the direction
+                //The single break uses a two relay system, one for on one for off
+                breakOn = new Relay(3);
+                breakOn.setDirection(Relay.Direction.kForward);
+                breakOff = new Relay(2);
+                breakOff.setDirection(Relay.Direction.kReverse);
+
+                //unused limit switches (they do not exist)
                 //upperLimitS = new DigitalInput(10);
                 //lowerLimitS = new DigitalInput(11);
                 //upperLimitE = new DigitalInput(12);
                 //lowerLimitE = new DigitalInput(13);
 
-                fLeft = new Jaguar(8); // motors for wheels with CAN ports as arguements
+                //motors for wheels with PWM channels as arguements
+                fLeft = new Jaguar(8); 
                 fRight = new Jaguar(6);
                 bLeft = new Jaguar(9);
                 bRight = new Jaguar(7);
                 Sholder = new Victor(3);
                 Elbow = new Victor(1);
 
+                //line sensors
                 left = new DigitalInput(8); // for LineTracker
                 middle = new DigitalInput(6);
                 right = new DigitalInput(4);
@@ -103,44 +129,49 @@ public class RobotTemplate extends IterativeRobot
                 //middle2 = new DigitalInput(7);
                 //right2 = new DigitalInput(5);
 
-                lowerArmEncoder = new Encoder(4,11,4,10);//These arguments may be inversed
+                //the encoder for the lower arm
+                lowerArmEncoder = new Encoder(4,11,4,10);
 
+                //ultrasonic sensor init and setup
                 output = new DigitalOutput(2); // ultrasonic output
                 input = new DigitalInput(3); //ultrasonic input
                 ultraSonic = new Ultrasonic(output, input, Ultrasonic.Unit.kMillimeter); //initialize ultrasonic
                 ultraSonic.setEnabled(true);
                 ultraSonic.setAutomaticMode(true);
 
+                //compressor init
                 air = new Compressor(1,1);
                 shifter = new Solenoid(8,2);
                 shifter.set(false);
 
+                //The soleniod to actuate the claw arm
                 Kraken = new Solenoid(8,1);
                 Kraken.set(false);
 
+                //the relay to retract the minibot holding pneumatic
                 minibot = new Relay(4, 4);
                 //minibot.setDirection(Relay.Direction.kForward);
                 //minibot.set(Relay.Value.kOn);
-                ds = DriverStation.getInstance();
+
+                //variables to remeber state. (Are these redundant?)
                 hasHangedTube = false;
                 hasAlreadyPaused = false;
                 doneWithAuto = false;
                 autoState = 0;
-                updateDS();
-
-
+                upperArmRaised = false;
+                lowerArmRaised = false;
                 upperArmRaised = false;
                 lowerArmRaised = false;
 
-                lcd = DriverStationLCD.getInstance();
-
-                upperArmRaised = false;
-                lowerArmRaised = false;
-
-                lcd = DriverStationLCD.getInstance();
+                //starts the encoder
                 lowerArmEncoder.start();
-                //scam = AxisCamera.getInstance();
 
+                 //drivers station startup
+                 ds = DriverStation.getInstance();
+                 updateDS();
+                 lcd = DriverStationLCD.getInstance();
+
+                 //scam = AxisCamera.getInstance();
                 //upperArmEncoder = new Encoder(1,1); //Needs channels
                 //lowerArmEncoder = new Encoder(1,2);
                 //upperArmEncoder.reset(); //"Zero out" the encoders
@@ -154,75 +185,89 @@ public class RobotTemplate extends IterativeRobot
         timer.delay(1);
     }
 
-    /**
+/*
 * This function is called periodically during autonomous
 */
-
-    boolean atFork = false; // if robot has arrived at fork
-    boolean armAtHeight = false;
-    int lastSense = 0; // last LineTracker which saw line (1 for left, 2 for right
-    int mmDistance;
     public void autonomousPeriodic()
     {
         
-        shifter.set(true);
-         if (doneWithAuto)
+         shifter.set(true);//sets the shifter in an arbitrary direction so it engages
+
+         if (doneWithAuto)// if autonomous has completed skip the rest
          {
              return;
          }
-         forkLeft = ds.getDigitalIn(1);//left
-         pauseAtBegin = ds.getDigitalIn(2);
-         stopAfterHang = ds.getDigitalIn(3);
+
+         forkLeft = ds.getDigitalIn(1);//Go left
+         pauseAtBegin = ds.getDigitalIn(2);//pause before moving
+         stopAfterHang = ds.getDigitalIn(3);//do not back up after hanging the tube
          turnAfterHang = !stopAfterHang && ds.getDigitalIn(4);//This will only be true if stopAfterHang is false
-         usingFork = ds.getDigitalIn(5);
+         usingFork = ds.getDigitalIn(5);//Should the robot expect a fork?
+         
+         //update the compressor and drivers station
          updateComp();
          updateDS();
+         
+         //this is for debugging
          if(hasHangedTube)
             System.out.println("hung");
+
+         //Stores the linetracker data for this iteration
          boolean leftValue = left.get();
          boolean middleValue = middle.get();
          boolean rightValue = right.get();
+
+         //Why are these here?
          //boolean leftValue2 = left2.get();
          //boolean middleValue2 = middle2.get();
          //boolean rightValue2 = right2.get();
-         int height = (int)(ds.getDigitalIn(5)?1:0)+
+         
+         //This computes an int to represent a state in the later switch that
+         //raises the arm to the correct height based off the DS values
+         int height =   (int)(ds.getDigitalIn(5)?1:0)+
                         (int)(ds.getDigitalIn(6)?2:0)+
                         (int)(ds.getDigitalIn(7)?4:0)+
                         (int)(ds.getDigitalIn(8)?8:0);
-        double speed = 0.3;
-       // System.out.println(rightValue + " " + middleValue + " " + leftValue);
+
+       
+        double speed = 0.3;//This is the base speed for autonomous
+
+        //This computes an int to represent a state in the later switch that
+        //follows the line based off the line sensor values
         int lineState = (int)(rightValue?0:1)+
                         (int)(middleValue?0:2)+
                         (int)(leftValue?0:4);
 
 
+        //vegetable robot
         if (ds.getAnalogIn(2) > 0)
             {
-                //vegetable robot
                 return;
             }
+
+
+        //raises arm for autonomous, it only runs once
         if(!armAtHeight)
         {
             System.out.println("Moving arm");
             setArmHeight(height);
             armAtHeight = true;
-        }//raises arm for autonomous
+        }
         
-
+        //no line following, just a forward movement
         if (ds.getAnalogIn(1) > 0)
         {
             //dead reckoning
             //BE SURE TO RAISE ARM BC THIS IS HIGH LOW
+            //^That needs to be told to the drivers
             setArmHeight(height);
-            straight(speed);
+            straight(speed);//move until close enough
             if(closerThan(mmDistance))
             {
                 straight(0); //Stop
                 hangTube();
                 return;
             }
-
-
         }
 
         if (hasHangedTube && !turnAfterHang) //If the robot has hanged the tube, and then should back straight up...
@@ -267,15 +312,13 @@ public class RobotTemplate extends IterativeRobot
                 doneWithAuto = true;
                 return;
          }
-        else if (!hasHangedTube && ds.getAnalogIn(1) == 0)
+        else if (!hasHangedTube && ds.getAnalogIn(1) == 0)//follow the line
         {
              moveWhileTracking(lineState, speed, autoState);
         }
 
 
-        //System.out.println(ultraSonic.getRangeMM());
-
-        if(closerThan(mmDistance))
+        if(closerThan(mmDistance))//hang the tube when at the right distance
         {
             straight(0); //Stop
             hangTube();
@@ -298,12 +341,14 @@ public class RobotTemplate extends IterativeRobot
         }
 
     }
-    boolean KrakenIsWaiting = false;
+    
     public void teleopPeriodic()
     {
 
         //System.out.println(ultraSonic.getRangeMM());
-        System.out.println(lowerArmEncoder.get() + " counts" + (lowerArmEncoder == null));
+        System.out.println(lowerArmEncoder.get() + " counts" + (lowerArmEncoder == null));//this is for debugging
+
+        //since we are running pwm's instead of CAN, this won't do anything
         try{
         setCoast(fLeft); // set them to drive in coast mode (no sudden brakes)
         setCoast(fRight);
@@ -313,7 +358,7 @@ public class RobotTemplate extends IterativeRobot
         //setBreak(upperArm);
         }catch (Exception e) {}
 
-        if(j1.getRawButton(7))
+        if(j1.getRawButton(7))//resets the encoder on the arm to 0, use in auto testing
         {
              //Elbow.set(-0.5); // TO BE EXPERIMENTED
                //     try
@@ -325,16 +370,17 @@ public class RobotTemplate extends IterativeRobot
         }
 
        
-         if(j1.getRawButton(6))
+         if(j1.getRawButton(6))//reset arm status for auto tests
         {
             armAtHeight = false;
         }
 
-
+        //updates all other systems
         updateComp();
         updateGear();
         updateDS();
 
+        //On pressing and releasing a button the claw actuates
         if(controller.getRawButton(6))
         {
             KrakenIsWaiting = true;
@@ -344,9 +390,13 @@ public class RobotTemplate extends IterativeRobot
             changeKraken();
             KrakenIsWaiting = false;
         }
+        
+        //updates the arm heights
         updateLowerArm();
         updateUpperArm();
 
+        //One of these works
+        //TEST IT TO FIND THE RIGHT ONE!!!
         if(j1.getRawButton(10) && j2.getRawButton(10))
         {
             System.out.println("Mini1");
@@ -377,6 +427,7 @@ public class RobotTemplate extends IterativeRobot
         
     }
 
+    //sets the left wheel motors
     private void setLefts(double d)
     {
         try
@@ -393,19 +444,7 @@ public class RobotTemplate extends IterativeRobot
         }
     }
 
-    private void updateDS()
-    {
-        ds.setDigitalOut(1, forkLeft);
-        ds.setDigitalOut(2, pauseAtBegin);
-        ds.setDigitalOut(3, stopAfterHang);
-        ds.setDigitalOut(4, turnAfterHang);
-        ds.setDigitalOut(5, shifter.get());
-        ds.setDigitalOut(2, pauseAtBegin);
-        ds.setDigitalOut(3, stopAfterHang);
-        ds.setDigitalOut(4, turnAfterHang);
-        ds.setDigitalOut(5, shifter.get());
-    }
-
+    //Sets the right wheel motors
     private void setRights(double d)
     {
         try{
@@ -419,10 +458,28 @@ public class RobotTemplate extends IterativeRobot
         }
     }
 
+   //update the driver's station outputs
+    private void updateDS()
+    {
+        ds.setDigitalOut(1, forkLeft);
+        ds.setDigitalOut(2, pauseAtBegin);
+        ds.setDigitalOut(3, stopAfterHang);
+        ds.setDigitalOut(4, turnAfterHang);
+        ds.setDigitalOut(5, shifter.get());
+        ds.setDigitalOut(2, pauseAtBegin);
+        ds.setDigitalOut(3, stopAfterHang);
+        ds.setDigitalOut(4, turnAfterHang);
+        ds.setDigitalOut(5, shifter.get());
+    }
+
+   
+    //this does not work with PWM
     public void setCoast(Jaguar jag) throws CANTimeoutException
     {//Sets the drive motors to coast mode
        //; try{jag.configNeutralMode(Jaguar.NeutralMode.kCoast);} catch (Exception e) {e.printStackTrace();}
     }
+
+    //Lucas Mark 1
 
     public void updateComp()
     {

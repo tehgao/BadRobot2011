@@ -1,3 +1,6 @@
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//THIS CODE DOES NOT WORK. DO NOT USE IN COMPETITION!!!!
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
